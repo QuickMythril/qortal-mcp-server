@@ -67,13 +67,33 @@ class QortalApiClient:
             await self._client.aclose()
             self._client = None
 
-    def _map_error(self, error_code: str | None, status_code: int) -> QortalApiError:
-        normalized = (error_code or "").upper()
-        if normalized in {"INVALID_ADDRESS", "INVALID_QORTAL_ADDRESS", "INVALID_RECIPIENT"}:
+    def _map_error(
+        self, error_code: str | int | None, status_code: int, message: str | None = None
+    ) -> QortalApiError:
+        normalized = ""
+        if isinstance(error_code, int):
+            normalized = str(error_code)
+        elif isinstance(error_code, str):
+            normalized = error_code.upper()
+
+        lowered_message = (message or "").lower()
+
+        invalid_address_signals = {
+            "INVALID_ADDRESS",
+            "INVALID_QORTAL_ADDRESS",
+            "INVALID_RECIPIENT",
+            "102",
+        }
+        if normalized in invalid_address_signals or "invalid address" in lowered_message:
             return InvalidAddressError(
                 "Invalid Qortal address.", code=normalized or None, status_code=status_code
             )
-        if normalized in {"ADDRESS_UNKNOWN", "UNKNOWN_ADDRESS"} or status_code == 404:
+        unknown_signals = {"ADDRESS_UNKNOWN", "UNKNOWN_ADDRESS"}
+        if normalized in unknown_signals or "unknown address" in lowered_message:
+            return AddressNotFoundError(
+                "Address not found on chain.", code=normalized or None, status_code=status_code
+            )
+        if status_code == 404:
             return AddressNotFoundError(
                 "Address not found on chain.", code=normalized or None, status_code=status_code
             )
@@ -113,12 +133,16 @@ class QortalApiClient:
             raise QortalApiError("Unexpected response from node.", status_code=response.status_code) from exc
 
         if response.status_code >= 400:
-            error_field: Optional[str] = None
+            error_field: Optional[str | int] = None
+            message_field: Optional[str] = None
             if isinstance(data, dict):
                 raw_error = data.get("error")
-                if isinstance(raw_error, str):
+                if isinstance(raw_error, (str, int)):
                     error_field = raw_error
-            raise self._map_error(error_field, response.status_code)
+                raw_message = data.get("message")
+                if isinstance(raw_message, str):
+                    message_field = raw_message
+            raise self._map_error(error_field, response.status_code, message=message_field)
 
         return data
 

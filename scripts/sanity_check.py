@@ -3,8 +3,14 @@
 from __future__ import annotations
 
 import asyncio
+import os
+import sys
 
-from qortal_mcp.tools import get_account_overview, get_node_status
+REPO_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+if REPO_ROOT not in sys.path:
+    sys.path.insert(0, REPO_ROOT)
+
+from qortal_mcp.tools import get_account_overview, get_node_status  # noqa: E402
 
 # Sample address for testing. Replace with a known address on your node if needed.
 SAMPLE_ADDRESS = "QZKfNjpXKd3r5asJ5AZtZRnTj5hZ1a8QwM"
