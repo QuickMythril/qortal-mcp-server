@@ -28,6 +28,7 @@ from qortal_mcp.tools import (
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=getattr(logging, default_config.log_level.upper(), logging.INFO))
 rate_limiter = PerKeyRateLimiter(rate_per_sec=default_config.rate_limit_qps)
+HEALTH_STATUS = {"status": "ok"}
 
 @asynccontextmanager
 async def lifespan(_app: FastAPI):
@@ -47,9 +48,9 @@ app = FastAPI(
 
 def _log_tool_result(tool_name: str, result: Dict[str, Any]) -> None:
     if isinstance(result, dict) and result.get("error"):
-        logger.warning("%s failed: %s", tool_name, result.get("error"))
+        logger.warning("tool=%s outcome=error error=%s", tool_name, result.get("error"))
     else:
-        logger.info("%s succeeded", tool_name)
+        logger.info("tool=%s outcome=success", tool_name)
 
 
 async def _enforce_rate_limit(tool_name: str) -> Optional[JSONResponse]:
@@ -58,6 +59,12 @@ async def _enforce_rate_limit(tool_name: str) -> Optional[JSONResponse]:
         logger.warning("Rate limit exceeded for %s", tool_name)
         return JSONResponse(status_code=429, content={"error": "Rate limit exceeded"})
     return None
+
+
+@app.get("/health")
+async def health() -> JSONResponse:
+    """Lightweight health endpoint for monitoring."""
+    return JSONResponse(content=HEALTH_STATUS)
 
 
 @app.get("/tools/node_status")

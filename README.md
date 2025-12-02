@@ -125,6 +125,9 @@ pytest
 With the server running (default `http://localhost:8000`):
 
 ```bash
+# Health
+curl http://localhost:8000/health
+
 # Node status
 curl http://localhost:8000/tools/node_status
 
