@@ -256,19 +256,32 @@ async def mcp_gateway(request: Request) -> JSONResponse:
       - call_tool / tools/call
     """
     request_id = getattr(request.state, "request_id", None)
+    start_time = time.time()
+
+    def _respond(payload: Dict[str, Any], status_code: int = 200, *, outcome: str, method_label: Optional[str] = None, tool_label: Optional[str] = None, error_code: Optional[int] = None) -> JSONResponse:
+        duration_ms = (time.time() - start_time) * 1000
+        logger.debug(
+            "mcp outcome=%s method=%s tool=%s id=%s status=%s duration_ms=%.2f error_code=%s",
+            outcome,
+            method_label,
+            tool_label,
+            payload.get("id"),
+            status_code,
+            duration_ms,
+            error_code,
+            extra={"request_id": request_id, "tool": tool_label, "error": error_code},
+        )
+        return JSONResponse(status_code=status_code, content=payload)
+
     try:
         body = await request.json()
     except Exception:
-        return JSONResponse(
-            status_code=400,
-            content=_jsonrpc_error_payload(None, -32700, "Parse error", request_id=request_id),
-        )
+        payload = _jsonrpc_error_payload(None, -32700, "Parse error", request_id=request_id)
+        return _respond(payload, status_code=400, outcome="error", method_label=None, error_code=-32700)
 
     if not isinstance(body, dict):
-        return JSONResponse(
-            status_code=400,
-            content=_jsonrpc_error_payload(None, -32600, "Invalid request", request_id=request_id),
-        )
+        payload = _jsonrpc_error_payload(None, -32600, "Invalid request", request_id=request_id)
+        return _respond(payload, status_code=400, outcome="error", method_label=None, error_code=-32600)
 
     method = body.get("method")
     rpc_id = body.get("id")
@@ -278,33 +291,46 @@ async def mcp_gateway(request: Request) -> JSONResponse:
     elif isinstance(raw_params, dict):
         params = raw_params
     else:
-        return JSONResponse(
-            content=_jsonrpc_error_payload(rpc_id, -32602, "Invalid params", request_id=request_id)
-        )
+        payload = _jsonrpc_error_payload(rpc_id, -32602, "Invalid params", request_id=request_id)
+        return _respond(payload, outcome="error", method_label=method, error_code=-32602)
 
     if not method:
-        return JSONResponse(content=_jsonrpc_error_payload(rpc_id, -32600, "Invalid request", request_id=request_id))
+        payload = _jsonrpc_error_payload(rpc_id, -32600, "Invalid request", request_id=request_id)
+        return _respond(payload, outcome="error", method_label=None, error_code=-32600)
 
     if method == "initialize":
         protocol_version = params.get("protocolVersion")
         if not isinstance(protocol_version, str) or not protocol_version:
-            return JSONResponse(
-                content=_jsonrpc_error_payload(rpc_id, -32602, "Invalid params", request_id=request_id)
-            )
+            payload = _jsonrpc_error_payload(rpc_id, -32602, "Invalid params", request_id=request_id)
+            return _respond(payload, outcome="error", method_label=method, error_code=-32602)
 
+        logger.debug(
+            "mcp initialize requested protocol=%s request_id=%s",
+            protocol_version,
+            request_id,
+            extra={"request_id": request_id},
+        )
         result = {
             "protocolVersion": protocol_version,
             "serverInfo": {"name": MCP_SERVER_NAME, "version": MCP_SERVER_VERSION},
             "capabilities": {"tools": {"listChanged": False}},
         }
-        return JSONResponse(content=_jsonrpc_success_payload(rpc_id, result, request_id=request_id))
+        return _respond(
+            _jsonrpc_success_payload(rpc_id, result, request_id=request_id),
+            outcome="success",
+            method_label=method,
+        )
 
     if method in ("list_tools", "tools/list"):
         limited = await _enforce_rate_limit("list_tools")
         if limited:
             return limited
         result = mcp.list_tools()
-        return JSONResponse(content=_jsonrpc_success_payload(rpc_id, result, request_id=request_id))
+        return _respond(
+            _jsonrpc_success_payload(rpc_id, result, request_id=request_id),
+            outcome="success",
+            method_label=method,
+        )
 
     if method in ("call_tool", "tools/call"):
         tool_name = params.get("tool") or params.get("name")
@@ -312,16 +338,21 @@ async def mcp_gateway(request: Request) -> JSONResponse:
         if tool_params is None:
             tool_params = params.get("arguments") or {}
         if not isinstance(tool_params, dict):
-            return JSONResponse(
-                content=_jsonrpc_error_payload(rpc_id, -32602, "Invalid params", request_id=request_id)
-            )
+            payload = _jsonrpc_error_payload(rpc_id, -32602, "Invalid params", request_id=request_id)
+            return _respond(payload, outcome="error", method_label=method, tool_label=tool_name, error_code=-32602)
         limited = await _enforce_rate_limit(tool_name or "call_tool")
         if limited:
             return limited
         result = await mcp.call_tool(tool_name, tool_params)
-        return JSONResponse(content=_jsonrpc_success_payload(rpc_id, result, request_id=request_id))
+        return _respond(
+            _jsonrpc_success_payload(rpc_id, result, request_id=request_id),
+            outcome="success",
+            method_label=method,
+            tool_label=tool_name,
+        )
 
-    return JSONResponse(content=_jsonrpc_error_payload(rpc_id, -32601, "Method not found", request_id=request_id))
+    payload = _jsonrpc_error_payload(rpc_id, -32601, "Method not found", request_id=request_id)
+    return _respond(payload, outcome="error", method_label=method, error_code=-32601)
 
 
 # Run with: uvicorn qortal_mcp.server:app --reload
