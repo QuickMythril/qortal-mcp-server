@@ -30,6 +30,36 @@ async def test_list_trade_offers_unauthorized_error():
 
 
 @pytest.mark.asyncio
+async def test_list_trade_offers_normalizes_core_fields():
+    core_style_offer = {
+        "qortalCreatorTradeAddress": "QT123",
+        "qortalAtAddress": "AT456",
+        "qortalCreator": "QCREATOR",
+        "creationTimestamp": 1234567890,
+        "foreignBlockchain": "LTC",
+        "expectedForeignAmount": "0.1",
+        "qortAmount": "5",
+    }
+
+    class StubClient:
+        async def fetch_trade_offers(self, *, limit: int):
+            return [core_style_offer]
+
+    offers = await list_trade_offers(client=StubClient())
+    assert offers == [
+        {
+            "tradeAddress": "QT123",
+            "creator": "QCREATOR",
+            "offeringQort": "5",
+            "expectedForeign": "0.1",
+            "foreignCurrency": "LTC",
+            "mode": None,
+            "timestamp": 1234567890,
+        }
+    ]
+
+
+@pytest.mark.asyncio
 async def test_qdn_requires_address_or_service():
     result = await search_qdn()
     assert result == {"error": "At least one of address or service is required."}

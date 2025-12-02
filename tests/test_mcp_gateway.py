@@ -214,3 +214,27 @@ def test_mcp_wraps_list_results_into_object_container(monkeypatch):
     parsed = json.loads(content["text"])
     assert parsed == [{"foo": "bar"}, {"baz": "qux"}]
     assert data["result"]["structuredContent"] == [{"foo": "bar"}, {"baz": "qux"}]
+
+
+def test_mcp_empty_list_returns_valid_content(monkeypatch):
+    async def fake_call_tool(name, params=None):
+        return []
+
+    monkeypatch.setattr("qortal_mcp.server.mcp.call_tool", fake_call_tool)
+
+    client = TestClient(app)
+    resp = client.post(
+        "/mcp",
+        json={
+            "jsonrpc": "2.0",
+            "id": 16,
+            "method": "tools/call",
+            "params": {"name": "list_trade_offers", "arguments": {}},
+        },
+    )
+    assert resp.status_code == 200
+    data = resp.json()
+    content = data["result"]["content"][0]
+    assert content["type"] == "text"
+    assert content["text"].strip() == "[]"
+    assert data["result"]["structuredContent"] == []
