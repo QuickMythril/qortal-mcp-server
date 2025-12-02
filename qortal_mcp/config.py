@@ -36,6 +36,11 @@ DEFAULT_API_KEY_FILE = "apikey.txt"
 
 # Safety limits
 MAX_NAMES_RETURNED = 100
+MAX_TRADE_OFFERS = 100
+DEFAULT_TRADE_OFFERS = 50
+MAX_QDN_RESULTS = 20
+DEFAULT_QDN_RESULTS = 10
+MAX_NAME_DATA_PREVIEW = 1000
 
 
 def load_api_key() -> Optional[str]:
@@ -67,6 +72,11 @@ class QortalConfig:
     timeout: float = DEFAULT_TIMEOUT
     api_key: Optional[str] = load_api_key()
     max_names: int = MAX_NAMES_RETURNED
+    max_trade_offers: int = MAX_TRADE_OFFERS
+    default_trade_offers: int = DEFAULT_TRADE_OFFERS
+    max_qdn_results: int = MAX_QDN_RESULTS
+    default_qdn_results: int = DEFAULT_QDN_RESULTS
+    max_name_data_preview: int = MAX_NAME_DATA_PREVIEW
 
 
 default_config = QortalConfig()

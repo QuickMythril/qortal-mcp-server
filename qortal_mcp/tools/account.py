@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import logging
-import re
 from typing import Any, Dict, List
 
 from qortal_mcp.config import QortalConfig, default_config
@@ -15,18 +14,9 @@ from qortal_mcp.qortal_api import (
     UnauthorizedError,
     default_client,
 )
+from qortal_mcp.tools.validators import is_valid_qortal_address
 
 logger = logging.getLogger(__name__)
-
-# Qortal addresses are Base58, 34 characters, prefixed with "Q".
-ADDRESS_REGEX = re.compile(r"^Q[1-9A-HJ-NP-Za-km-z]{33}$")
-
-
-def is_valid_qortal_address(address: str) -> bool:
-    """Basic format validation for Qortal addresses."""
-    if not address:
-        return False
-    return bool(ADDRESS_REGEX.fullmatch(address.strip()))
 
 
 def _safe_int(value: Any) -> int:
@@ -152,3 +142,50 @@ async def get_account_overview(
         "assetBalances": [],
         "names": names,
     }
+
+
+async def get_balance(
+    address: str,
+    *,
+    asset_id: int = 0,
+    client=default_client,
+) -> Dict[str, Any]:
+    """
+    Lightweight balance lookup for a single asset (default QORT assetId=0).
+    """
+    if not is_valid_qortal_address(address):
+        return {"error": "Invalid Qortal address."}
+
+    try:
+        parsed_asset_id = int(asset_id)
+    except (TypeError, ValueError):
+        return {"error": "Invalid asset id."}
+    if parsed_asset_id < 0:
+        return {"error": "Invalid asset id."}
+
+    try:
+        balance_payload = await client.fetch_address_balance(address, asset_id=parsed_asset_id)
+    except InvalidAddressError:
+        return {"error": "Invalid Qortal address."}
+    except AddressNotFoundError:
+        return {"error": "Address not found on chain."}
+    except UnauthorizedError:
+        return {"error": "Unauthorized or API key required."}
+    except NodeUnreachableError:
+        return {"error": "Node unreachable"}
+    except QortalApiError:
+        return {"error": "Qortal API error."}
+    except Exception:
+        logger.exception("Unexpected error fetching balance for %s", address)
+        return {"error": "Unexpected error while retrieving balance."}
+
+    return {
+        "address": address,
+        "assetId": parsed_asset_id,
+        "balance": _normalize_balance(balance_payload),
+    }
+
+
+def validate_address(address: str) -> Dict[str, Any]:
+    """Utility to validate address format without calling the node."""
+    return {"isValid": is_valid_qortal_address(address)}

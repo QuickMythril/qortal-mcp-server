@@ -120,6 +120,18 @@ python scripts/sanity_check.py
 Once running, the server can be wired into your LLM tooling as an MCP server or
 as an HTTP tool host, depending on your integration.
 
+### Available tool routes (v1)
+
+- `GET /tools/node_status`
+- `GET /tools/node_info`
+- `GET /tools/account_overview/{address}`
+- `GET /tools/balance/{address}?assetId=0`
+- `GET /tools/validate_address/{address}`
+- `GET /tools/name_info/{name}`
+- `GET /tools/names_by_address/{address}?limit=...`
+- `GET /tools/trade_offers?limit=...`
+- `GET /tools/qdn_search?address=...&service=...&limit=...`
+
 ## Roadmap (short)
 
 1. **Milestone 1**

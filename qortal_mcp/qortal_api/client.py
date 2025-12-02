@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import logging
 from typing import Any, Dict, Optional
+from urllib.parse import quote
 
 import httpx
 
@@ -38,6 +39,10 @@ class InvalidAddressError(QortalApiError):
 
 class AddressNotFoundError(QortalApiError):
     """Raised when an address does not exist on-chain."""
+
+
+class NameNotFoundError(QortalApiError):
+    """Raised when a name is not registered."""
 
 
 class UnauthorizedError(QortalApiError):
@@ -88,15 +93,18 @@ class QortalApiClient:
             return InvalidAddressError(
                 "Invalid Qortal address.", code=normalized or None, status_code=status_code
             )
-        unknown_signals = {"ADDRESS_UNKNOWN", "UNKNOWN_ADDRESS"}
+        name_unknown_signals = {"NAME_UNKNOWN", "401"}
+        if normalized in name_unknown_signals:
+            return NameNotFoundError(
+                "Name not found.", code=normalized or None, status_code=status_code
+            )
+        unknown_signals = {"ADDRESS_UNKNOWN", "UNKNOWN_ADDRESS", "124"}
         if normalized in unknown_signals or "unknown address" in lowered_message:
             return AddressNotFoundError(
                 "Address not found on chain.", code=normalized or None, status_code=status_code
             )
         if status_code == 404:
-            return AddressNotFoundError(
-                "Address not found on chain.", code=normalized or None, status_code=status_code
-            )
+            return QortalApiError("Resource not found.", code=normalized or None, status_code=status_code)
         if status_code in {401, 403}:
             return UnauthorizedError(
                 "Unauthorized or API key required.", code=normalized or None, status_code=status_code
@@ -150,19 +158,50 @@ class QortalApiClient:
         """Retrieve node synchronization and connectivity state."""
         return await self._request("/admin/status", use_api_key=True)
 
+    async def fetch_node_info(self) -> Dict[str, Any]:
+        """Retrieve node information such as version and uptime."""
+        return await self._request("/admin/info", use_api_key=True)
+
     async def fetch_address_info(self, address: str) -> Dict[str, Any]:
         """Retrieve base account information for an address."""
-        return await self._request(f"/addresses/{address}")
+        encoded = quote(address, safe="")
+        return await self._request(f"/addresses/{encoded}")
 
     async def fetch_address_balance(self, address: str, asset_id: int = 0) -> Dict[str, Any]:
         """Retrieve balance for an address. Defaults to asset 0 (QORT)."""
+        encoded = quote(address, safe="")
         return await self._request(
-            f"/addresses/balance/{address}", params={"assetId": asset_id}
+            f"/addresses/balance/{encoded}", params={"assetId": asset_id}
         )
 
     async def fetch_names_by_owner(self, address: str) -> Any:
         """Retrieve names owned by the given address."""
-        return await self._request(f"/names/address/{address}")
+        encoded = quote(address, safe="")
+        return await self._request(f"/names/address/{encoded}")
+
+    async def fetch_name_info(self, name: str) -> Dict[str, Any]:
+        """Retrieve details for a specific name."""
+        encoded = quote(name, safe="")
+        return await self._request(f"/names/{encoded}")
+
+    async def fetch_trade_offers(self, *, limit: int) -> Any:
+        """List open cross-chain trade offers."""
+        return await self._request("/crosschain/tradeoffers", params={"limit": limit})
+
+    async def search_qdn(
+        self,
+        *,
+        address: Optional[str] = None,
+        service: Optional[int] = None,
+        limit: int,
+    ) -> Any:
+        """Search arbitrary/QDN metadata."""
+        params: Dict[str, Any] = {"limit": limit}
+        if address:
+            params["address"] = address
+        if service is not None:
+            params["service"] = service
+        return await self._request("/arbitrary/search", params=params)
 
 
 default_client = QortalApiClient()

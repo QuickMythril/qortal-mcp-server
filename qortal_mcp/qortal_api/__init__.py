@@ -3,6 +3,7 @@
 from .client import (
     AddressNotFoundError,
     InvalidAddressError,
+    NameNotFoundError,
     NodeUnreachableError,
     QortalApiClient,
     QortalApiError,
@@ -15,8 +16,8 @@ __all__ = [
     "QortalApiError",
     "InvalidAddressError",
     "AddressNotFoundError",
+    "NameNotFoundError",
     "UnauthorizedError",
     "NodeUnreachableError",
     "default_client",
 ]
-

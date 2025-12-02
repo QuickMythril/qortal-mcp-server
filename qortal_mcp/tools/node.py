@@ -70,3 +70,29 @@ async def get_node_status(client=default_client) -> Dict[str, Any]:
         ),
     }
 
+
+async def get_node_info(client=default_client) -> Dict[str, Any]:
+    """
+    Retrieve static node information such as version and uptime.
+
+    Returns a dict matching DESIGN.md schema or an error dict.
+    """
+    try:
+        raw_info = await client.fetch_node_info()
+    except UnauthorizedError:
+        return {"error": "Unauthorized or API key required."}
+    except NodeUnreachableError:
+        return {"error": "Node unreachable"}
+    except QortalApiError:
+        return {"error": "Qortal API error."}
+    except Exception:
+        logger.exception("Unexpected error fetching node info")
+        return {"error": "Unexpected error while retrieving node info."}
+
+    return {
+        "buildVersion": raw_info.get("buildVersion") or raw_info.get("version"),
+        "buildTimestamp": _to_int(raw_info.get("buildTimestamp")),
+        "uptime": _to_int(raw_info.get("uptime")),
+        "currentTime": _to_int(raw_info.get("currentTime") or raw_info.get("now")),
+        "nodeId": raw_info.get("nodeId"),
+    }
