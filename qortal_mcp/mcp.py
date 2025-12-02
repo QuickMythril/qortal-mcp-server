@@ -26,6 +26,11 @@ from qortal_mcp.tools import (
     get_node_summary,
     get_node_uptime,
     list_trade_offers,
+    list_hidden_trade_offers,
+    get_trade_detail,
+    list_completed_trades,
+    get_trade_ledger,
+    get_trade_price,
     search_qdn,
     list_assets,
     get_asset_info,
@@ -334,6 +339,108 @@ TOOL_REGISTRY: Dict[str, ToolDefinition] = {
             "additionalProperties": False,
         },
         callable=list_trade_offers,
+    ),
+    "list_hidden_trade_offers": ToolDefinition(
+        name="list_hidden_trade_offers",
+        description="List hidden cross-chain trade offers.",
+        params={
+            "foreign_blockchain": "string (optional, e.g., BITCOIN/LITECOIN)",
+        },
+        input_schema={
+            "type": "object",
+            "properties": {
+                "foreign_blockchain": {
+                    "type": "string",
+                    "description": "Optional foreign blockchain filter (e.g., BITCOIN, LITECOIN)",
+                },
+            },
+            "required": [],
+            "additionalProperties": False,
+        },
+        callable=list_hidden_trade_offers,
+    ),
+    "get_trade_detail": ToolDefinition(
+        name="get_trade_detail",
+        description="Get detailed trade info for a specific AT address.",
+        params={"at_address": "string (required)"},
+        input_schema={
+            "type": "object",
+            "properties": {
+                "at_address": {
+                    "type": "string",
+                    "description": "AT address of the trade",
+                },
+            },
+            "required": ["at_address"],
+            "additionalProperties": False,
+        },
+        callable=get_trade_detail,
+    ),
+    "list_completed_trades": ToolDefinition(
+        name="list_completed_trades",
+        description="List completed cross-chain trades.",
+        params={
+            "foreign_blockchain": "string (optional)",
+            "minimum_timestamp": "integer (optional, ms since epoch)",
+            "buyer_public_key": "string (optional)",
+            "seller_public_key": "string (optional)",
+            "limit": "integer (optional)",
+            "offset": "integer (optional)",
+            "reverse": "boolean (optional)",
+        },
+        input_schema={
+            "type": "object",
+            "properties": {
+                "foreign_blockchain": {"type": "string"},
+                "minimum_timestamp": {"type": "integer", "minimum": 1},
+                "buyer_public_key": {"type": "string"},
+                "seller_public_key": {"type": "string"},
+                "limit": _limit_schema(default_config.max_trade_offers),
+                "offset": {"type": "integer", "minimum": 0},
+                "reverse": {"type": "boolean"},
+            },
+            "required": [],
+            "additionalProperties": False,
+        },
+        callable=list_completed_trades,
+    ),
+    "get_trade_ledger": ToolDefinition(
+        name="get_trade_ledger",
+        description="Fetch trade ledger entries for a public key.",
+        params={
+            "public_key": "string (required, Base58)",
+            "minimum_timestamp": "integer (optional, ms since epoch)",
+        },
+        input_schema={
+            "type": "object",
+            "properties": {
+                "public_key": {"type": "string"},
+                "minimum_timestamp": {"type": "integer", "minimum": 1},
+            },
+            "required": ["public_key"],
+            "additionalProperties": False,
+        },
+        callable=get_trade_ledger,
+    ),
+    "get_trade_price": ToolDefinition(
+        name="get_trade_price",
+        description="Fetch estimated trading price for a blockchain.",
+        params={
+            "blockchain": "string (required, e.g., BITCOIN)",
+            "max_trades": "integer (optional)",
+            "inverse": "boolean (optional)",
+        },
+        input_schema={
+            "type": "object",
+            "properties": {
+                "blockchain": {"type": "string"},
+                "max_trades": {"type": "integer", "minimum": 1},
+                "inverse": {"type": "boolean"},
+            },
+            "required": ["blockchain"],
+            "additionalProperties": False,
+        },
+        callable=get_trade_price,
     ),
     "search_qdn": ToolDefinition(
         name="search_qdn",

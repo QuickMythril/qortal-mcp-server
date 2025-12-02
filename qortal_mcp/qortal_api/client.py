@@ -270,6 +270,80 @@ class QortalApiClient:
             params["reverse"] = reverse
         return await self._request("/crosschain/tradeoffers", params=params, expect_dict=False)
 
+    async def fetch_hidden_trade_offers(
+        self,
+        *,
+        foreign_blockchain: Optional[str] = None,
+    ) -> Any:
+        """List hidden cross-chain trade offers."""
+        params: Dict[str, Any] = {}
+        if foreign_blockchain:
+            params["foreignBlockchain"] = foreign_blockchain
+        return await self._request("/crosschain/tradeoffers/hidden", params=params or None, expect_dict=False)
+
+    async def fetch_trade_detail(self, at_address: str) -> Any:
+        """Fetch detailed trade info for a specific AT address."""
+        encoded = quote(at_address, safe="")
+        return await self._request(f"/crosschain/trade/{encoded}")
+
+    async def fetch_completed_trades(
+        self,
+        *,
+        foreign_blockchain: Optional[str] = None,
+        minimum_timestamp: Optional[int] = None,
+        buyer_public_key: Optional[str] = None,
+        seller_public_key: Optional[str] = None,
+        limit: Optional[int] = None,
+        offset: Optional[int] = None,
+        reverse: Optional[bool] = None,
+    ) -> Any:
+        """Fetch completed cross-chain trades."""
+        params: Dict[str, Any] = {}
+        if foreign_blockchain:
+            params["foreignBlockchain"] = foreign_blockchain
+        if minimum_timestamp is not None:
+            params["minimumTimestamp"] = minimum_timestamp
+        if buyer_public_key:
+            params["buyerPublicKey"] = buyer_public_key
+        if seller_public_key:
+            params["sellerPublicKey"] = seller_public_key
+        if limit is not None:
+            params["limit"] = limit
+        if offset is not None:
+            params["offset"] = offset
+        if reverse is not None:
+            params["reverse"] = reverse
+        return await self._request("/crosschain/trades", params=params or None, expect_dict=False)
+
+    async def fetch_trade_ledger(
+        self,
+        *,
+        public_key: str,
+        minimum_timestamp: Optional[int] = None,
+    ) -> Any:
+        """Fetch trade ledger CSV for a public key."""
+        encoded = quote(public_key, safe="")
+        params: Dict[str, Any] = {}
+        if minimum_timestamp is not None:
+            params["minimumTimestamp"] = minimum_timestamp
+        return await self._request(f"/crosschain/ledger/{encoded}", params=params or None, expect_dict=False)
+
+    async def fetch_trade_price(
+        self,
+        *,
+        blockchain: str,
+        max_trades: Optional[int] = None,
+        inverse: Optional[bool] = None,
+    ) -> Any:
+        """Fetch estimated trading price."""
+        encoded = quote(blockchain, safe="")
+        params: Dict[str, Any] = {}
+        if max_trades is not None:
+            params["maxtrades"] = max_trades
+        if inverse is not None:
+            params["inverse"] = inverse
+        return await self._request(f"/crosschain/price/{encoded}", params=params or None, expect_dict=False)
+
     async def fetch_assets(
         self,
         *,

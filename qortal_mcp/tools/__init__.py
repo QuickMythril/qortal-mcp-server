@@ -10,7 +10,14 @@ from .names import (
     list_names,
     list_names_for_sale,
 )
-from .trade import list_trade_offers
+from .trade import (
+    list_trade_offers,
+    list_hidden_trade_offers,
+    get_trade_detail,
+    list_completed_trades,
+    get_trade_ledger,
+    get_trade_price,
+)
 from .qdn import search_qdn
 from .assets import list_assets, get_asset_info, get_asset_balances
 from . import validators
@@ -30,6 +37,11 @@ __all__ = [
     "list_names",
     "list_names_for_sale",
     "list_trade_offers",
+    "list_hidden_trade_offers",
+    "get_trade_detail",
+    "list_completed_trades",
+    "get_trade_ledger",
+    "get_trade_price",
     "search_qdn",
     "list_assets",
     "get_asset_info",
