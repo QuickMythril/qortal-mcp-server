@@ -37,11 +37,11 @@ from qortal_mcp.tools import (
     get_asset_balances,
     validate_address,
 )
-from qortal_mcp.tools.validators import ADDRESS_REGEX, NAME_MAX_LENGTH, NAME_MIN_LENGTH, NAME_REGEX
+from qortal_mcp.tools.validators import ADDRESS_REGEX, NAME_MAX_LENGTH, NAME_MIN_LENGTH
 
 
 ADDRESS_PATTERN = ADDRESS_REGEX.pattern
-NAME_PATTERN = NAME_REGEX.pattern
+NAME_PATTERN = r".+"
 
 
 def _limit_schema(max_value: int, *, default_minimum: int = 0) -> Dict[str, Any]:
