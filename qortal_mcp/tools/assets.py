@@ -83,8 +83,8 @@ async def get_asset_info(
     except NodeUnreachableError:
         return {"error": "Node unreachable"}
     except QortalApiError as exc:
-        if exc.code in {"INVALID_ASSET_ID"}:
-            return {"error": "Invalid asset id."}
+        if exc.code in {"INVALID_ASSET_ID", "601"}:
+            return {"error": "Asset not found."}
         return {"error": "Qortal API error."}
     except Exception:
         logger.exception("Unexpected error fetching asset info")
@@ -150,8 +150,8 @@ async def get_asset_balances(
     except NodeUnreachableError:
         return {"error": "Node unreachable"}
     except QortalApiError as exc:
-        if exc.code in {"INVALID_ASSET_ID"}:
-            return {"error": "Invalid asset id."}
+        if exc.code in {"INVALID_ASSET_ID", "601"}:
+            return {"error": "Asset not found."}
         return {"error": "Qortal API error."}
     except Exception:
         logger.exception("Unexpected error fetching asset balances")
