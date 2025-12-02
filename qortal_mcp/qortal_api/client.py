@@ -159,6 +159,9 @@ class QortalApiClient:
                     message_field = raw_message
             raise self._map_error(error_field, response.status_code, message=message_field)
 
+        if not isinstance(data, dict):
+            raise QortalApiError("Unexpected response from node.", status_code=response.status_code)
+
         return data
 
     async def fetch_node_status(self) -> Dict[str, Any]:
