@@ -120,6 +120,10 @@ python scripts/sanity_check.py
 pip install -r requirements-dev.txt
 pytest
 
+# (Optional) Live integration tests (require a running Core node)
+# Set LIVE_QORTAL=1 and optionally QORTAL_SAMPLE_ADDRESS / QORTAL_SAMPLE_NAME
+LIVE_QORTAL=1 pytest tests/test_live_integration.py
+
 ## HTTP usage examples
 
 With the server running (default `http://localhost:8000`):
