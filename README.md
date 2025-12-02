@@ -175,6 +175,14 @@ To register with an MCP-capable client (e.g., ChatGPT/Codex IDE):
 - Log format can be switched to JSON with `QORTAL_MCP_LOG_FORMAT=json`. Per-tool
   rate limits can be set in code via `per_tool_rate_limits` if desired.
 - `/metrics` returns in-process counters (requests, rate-limited counts, per-tool successes/errors); for multi-worker setups, aggregate externally.
+
+## Deployment notes
+
+- Run with uvicorn or gunicorn+uvicorn workers, e.g.:
+  - `uvicorn qortal_mcp.server:app --host 0.0.0.0 --port 8000`
+  - `gunicorn -k uvicorn.workers.UvicornWorker -w 2 qortal_mcp.server:app`
+- Rate limits and metrics are per-process; if you run multiple workers or behind a reverse proxy, consider external aggregation and/or adjust `per_tool_rate_limits`.
+- Terminate TLS at a reverse proxy (nginx/caddy/traefik) and restrict access to trusted clients if exposing beyond localhost.
 - `/metrics` returns in-process counters (requests, rate-limited counts, per-tool successes/errors).
 ```
 
