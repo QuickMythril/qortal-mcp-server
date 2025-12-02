@@ -437,6 +437,10 @@ Responsibilities: fileciteturn0file0
 - Protocol-level errors (unknown method, invalid params, parse errors) use
   top-level JSON-RPC `error` objects; tool-level validation stays in-band via
   the result (text content + optional structured payload).
+- Trade offers: field normalization maps `qortalCreatorTradeAddress`/`qortalAtAddress`
+  to `tradeAddress`, `qortalCreator` to `creator`, `creationTimestamp` to
+  `timestamp`, `foreignBlockchain` to `foreignCurrency`, and expected foreign
+  amounts from `expectedForeignAmount`/`expectedBitcoin` to `expectedForeign`.
 
 ### 4.3 Error handling
 

@@ -45,6 +45,7 @@ MCP clients) from using the server as intended:
      `"error"` object as JSON-RPC 2.0 recommends.  
    - For the handshake this can confuse clients which expect a proper
      `result` object or an explicit JSON-RPC error.
+   - Status: **addressed** – protocol errors now use top-level JSON-RPC `error`; tool errors use `isError` + `content` with text and `structuredContent`.
 
 4. **Small completeness/usability gaps**  
    - `get_account_overview` currently returns a field `assetBalances` but

@@ -210,6 +210,11 @@ Manifest: `mcp-manifest.json` points at `http://localhost:8000/mcp` with name
   rate limits can be set in code via `per_tool_rate_limits` if desired.
 - `/metrics` returns in-process counters (requests, rate-limited counts, per-tool successes/errors); for multi-worker setups, aggregate externally.
 
+## Testing
+
+- Unit tests: `pytest` (or `pytest --cov=qortal_mcp --cov=tests --cov-report=term-missing` after installing `requirements-dev.txt` which includes `pytest-cov`).
+- Live integration (requires a running Qortal node): `LIVE_QORTAL=1 pytest tests/test_live_integration.py` (optionally set `QORTAL_SAMPLE_ADDRESS` / `QORTAL_SAMPLE_NAME`).
+
 ## Deployment notes
 
 - Run with uvicorn or gunicorn+uvicorn workers, e.g.:
