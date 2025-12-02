@@ -3,9 +3,10 @@
 from __future__ import annotations
 
 import logging
-from typing import Any, Dict
+from contextlib import asynccontextmanager
+from typing import Any, Dict, Optional
 
-from fastapi import FastAPI, Query
+from fastapi import FastAPI, Query, Request
 from fastapi.responses import JSONResponse
 
 from qortal_mcp.qortal_api import default_client
@@ -24,10 +25,19 @@ from qortal_mcp import mcp
 
 logger = logging.getLogger(__name__)
 
+@asynccontextmanager
+async def lifespan(_app: FastAPI):
+    # Startup
+    yield
+    # Shutdown
+    await default_client.aclose()
+
+
 app = FastAPI(
     title="Qortal MCP Server",
     description="Read-only Qortal tool surface for LLM agents.",
     version="0.1.0",
+    lifespan=lifespan,
 )
 
 
@@ -114,14 +124,8 @@ async def qdn_search(
     return JSONResponse(content=result)
 
 
-@app.on_event("shutdown")
-async def shutdown_event() -> None:
-    """Ensure HTTP client resources are released on shutdown."""
-    await default_client.aclose()
-
-
 @app.post("/mcp")
-async def mcp_gateway(request: Dict[str, Any]) -> JSONResponse:
+async def mcp_gateway(request: Request) -> JSONResponse:
     """
     Minimal JSON-RPC-like gateway for MCP-style integrations.
 
@@ -129,9 +133,10 @@ async def mcp_gateway(request: Dict[str, Any]) -> JSONResponse:
       - list_tools
       - call_tool (with params: tool, params)
     """
-    method = request.get("method")
-    rpc_id = request.get("id")
-    params = request.get("params") or {}
+    body = await request.json()
+    method = body.get("method")
+    rpc_id = body.get("id")
+    params = body.get("params") or {}
 
     if method == "list_tools":
         result = mcp.list_tools()
