@@ -174,6 +174,7 @@ To register with an MCP-capable client (e.g., ChatGPT/Codex IDE):
 - Responses include an `X-Request-ID` header; the MCP gateway also returns `requestId` in JSON-RPC responses.
 - Log format can be switched to JSON with `QORTAL_MCP_LOG_FORMAT=json`. Per-tool
   rate limits can be set in code via `per_tool_rate_limits` if desired.
+- `/metrics` returns in-process counters (requests, rate-limited counts, per-tool successes/errors); for multi-worker setups, aggregate externally.
 - `/metrics` returns in-process counters (requests, rate-limited counts, per-tool successes/errors).
 ```
 

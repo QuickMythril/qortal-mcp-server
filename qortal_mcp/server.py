@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import logging
+import time
 import uuid
 from contextlib import asynccontextmanager
 from typing import Any, Dict, Optional
@@ -78,8 +79,11 @@ app = FastAPI(
 async def add_request_context(request: Request, call_next):
     request_id = str(uuid.uuid4())
     request.state.request_id = request_id
+    start = time.time()
     default_metrics.incr_request()
     response = await call_next(request)
+    duration_ms = (time.time() - start) * 1000
+    default_metrics.record_duration(request_id, duration_ms)
     response.headers["X-Request-ID"] = request_id
     return response
 
