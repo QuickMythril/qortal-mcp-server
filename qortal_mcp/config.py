@@ -41,6 +41,7 @@ DEFAULT_TRADE_OFFERS = 50
 MAX_QDN_RESULTS = 20
 DEFAULT_QDN_RESULTS = 10
 MAX_NAME_DATA_PREVIEW = 1000
+DEFAULT_RATE_LIMIT_QPS = 5
 
 
 def load_api_key() -> Optional[str]:
@@ -77,6 +78,7 @@ class QortalConfig:
     max_qdn_results: int = MAX_QDN_RESULTS
     default_qdn_results: int = DEFAULT_QDN_RESULTS
     max_name_data_preview: int = MAX_NAME_DATA_PREVIEW
+    rate_limit_qps: float = DEFAULT_RATE_LIMIT_QPS
 
 
 default_config = QortalConfig()
