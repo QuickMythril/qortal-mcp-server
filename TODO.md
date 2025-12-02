@@ -25,3 +25,11 @@ This list merges the gaps I found and the other CLI agent’s findings. Use it a
 - `get_minting_info_by_height`: returns “Node unreachable”; verify path (`/blocks/byheight/{height}/mintinginfo`) and response type; map missing height to clear error.
 - `list_transactions_by_creator`: Core requires `confirmationStatus`; tool currently omits it, causing “Invalid parameters.” Add required confirmation_status, validate Base58 public key, and clamp limits.
 - `list_transactions_by_block`: inconsistent “Qortal API error” for some block signatures; add Base58/length validation, ensure client uses `expect_dict=False`, map BLOCK_UNKNOWN/INVALID_SIGNATURE to clear errors.
+
+## Trade validation (pending)
+- Validate `get_trade_detail` against live offers now that AT addresses are surfaced; add AT-format validation if needed. Optional but useful for end-to-end sanity.
+
+## Optional/Deferred endpoints
+- Address utilities (read-only): `/addresses/lastreference/{address}`, `/addresses/online`, `/addresses/online/levels`, `/addresses/publickey/{address}`, `/addresses/convert/{publickey}`.
+- Admin read-only (optional): `/admin/settings`, `/admin/settings/{setting}`, `/admin/summary/alltime`, `/admin/enginestats`, `/admin/mintingaccounts`.
+- Additional block/tx endpoints currently skipped: `/blocks/signature/{signature}/data`, `/blocks/signature/{signature}/transactions`, `/blocks/child/{signature}`, `/blocks/onlineaccounts/{height}`, `/blocks/signer/{address}`; transaction helpers like unitfee/fee/convert/raw/processing remain out of scope for now.
