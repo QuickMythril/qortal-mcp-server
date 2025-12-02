@@ -100,3 +100,39 @@ async def get_node_info(client=default_client) -> Dict[str, Any]:
         ),
         "nodeId": raw_info.get("nodeId"),
     }
+
+
+async def get_node_summary(client=default_client) -> Dict[str, Any]:
+    """
+    Retrieve node summary information (wrapper over /admin/summary).
+    """
+    try:
+        summary = await client.fetch_node_summary()
+    except UnauthorizedError:
+        return {"error": "Unauthorized or API key required."}
+    except NodeUnreachableError:
+        return {"error": "Node unreachable"}
+    except QortalApiError:
+        return {"error": "Qortal API error."}
+    except Exception:
+        logger.exception("Unexpected error fetching node summary")
+        return {"error": "Unexpected error while retrieving node summary."}
+    return summary
+
+
+async def get_node_uptime(client=default_client) -> Dict[str, Any]:
+    """
+    Retrieve node uptime (wrapper over /admin/uptime).
+    """
+    try:
+        uptime_info = await client.fetch_node_uptime()
+    except UnauthorizedError:
+        return {"error": "Unauthorized or API key required."}
+    except NodeUnreachableError:
+        return {"error": "Node unreachable"}
+    except QortalApiError:
+        return {"error": "Qortal API error."}
+    except Exception:
+        logger.exception("Unexpected error fetching node uptime")
+        return {"error": "Unexpected error while retrieving node uptime."}
+    return uptime_info

@@ -24,6 +24,8 @@ from qortal_mcp.tools import (
     get_names_by_address,
     get_node_info,
     get_node_status,
+    get_node_summary,
+    get_node_uptime,
     list_trade_offers,
     search_qdn,
     validate_address,
@@ -154,6 +156,30 @@ async def node_info(request: Request) -> JSONResponse:
     result = await get_node_info()
     request_id = getattr(request.state, "request_id", None)
     _log_tool_result("get_node_info", result if isinstance(result, dict) else {}, request_id)
+    return JSONResponse(content=result)
+
+
+@app.get("/tools/node_summary")
+async def node_summary(request: Request) -> JSONResponse:
+    """Proxy for get_node_summary tool."""
+    limited = await _enforce_rate_limit("get_node_summary")
+    if limited:
+        return limited
+    result = await get_node_summary()
+    request_id = getattr(request.state, "request_id", None)
+    _log_tool_result("get_node_summary", result if isinstance(result, dict) else {}, request_id)
+    return JSONResponse(content=result)
+
+
+@app.get("/tools/node_uptime")
+async def node_uptime(request: Request) -> JSONResponse:
+    """Proxy for get_node_uptime tool."""
+    limited = await _enforce_rate_limit("get_node_uptime")
+    if limited:
+        return limited
+    result = await get_node_uptime()
+    request_id = getattr(request.state, "request_id", None)
+    _log_tool_result("get_node_uptime", result if isinstance(result, dict) else {}, request_id)
     return JSONResponse(content=result)
 
 

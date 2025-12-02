@@ -1,7 +1,6 @@
 import pytest
 
-from qortal_mcp.tools.node import get_node_info
-from qortal_mcp.tools.node import get_node_status, _to_int, _to_bool
+from qortal_mcp.tools.node import get_node_info, get_node_status, get_node_summary, get_node_uptime, _to_int, _to_bool
 from qortal_mcp.qortal_api.client import UnauthorizedError, NodeUnreachableError, QortalApiError
 
 
@@ -56,6 +55,46 @@ async def test_get_node_status_unreachable():
             raise NodeUnreachableError("down")
 
     result = await get_node_status(client=StubClient())
+    assert result == {"error": "Node unreachable"}
+
+
+@pytest.mark.asyncio
+async def test_get_node_summary_happy_path():
+    class StubClient:
+        async def fetch_node_summary(self):
+            return {"summary": "ok"}
+
+    result = await get_node_summary(client=StubClient())
+    assert result == {"summary": "ok"}
+
+
+@pytest.mark.asyncio
+async def test_get_node_summary_error_mapping():
+    class StubClient:
+        async def fetch_node_summary(self):
+            raise UnauthorizedError("nope")
+
+    result = await get_node_summary(client=StubClient())
+    assert result == {"error": "Unauthorized or API key required."}
+
+
+@pytest.mark.asyncio
+async def test_get_node_uptime_happy_path():
+    class StubClient:
+        async def fetch_node_uptime(self):
+            return {"uptime": 123}
+
+    result = await get_node_uptime(client=StubClient())
+    assert result == {"uptime": 123}
+
+
+@pytest.mark.asyncio
+async def test_get_node_uptime_error_mapping():
+    class StubClient:
+        async def fetch_node_uptime(self):
+            raise NodeUnreachableError("down")
+
+    result = await get_node_uptime(client=StubClient())
     assert result == {"error": "Node unreachable"}
 
 

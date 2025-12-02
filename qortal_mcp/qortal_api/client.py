@@ -173,6 +173,14 @@ class QortalApiClient:
         """Retrieve node information such as version and uptime."""
         return await self._request("/admin/info", use_api_key=True)
 
+    async def fetch_node_summary(self) -> Dict[str, Any]:
+        """Retrieve node summary information."""
+        return await self._request("/admin/summary", use_api_key=True)
+
+    async def fetch_node_uptime(self) -> Dict[str, Any]:
+        """Retrieve node uptime (if available)."""
+        return await self._request("/admin/uptime", use_api_key=True)
+
     async def fetch_address_info(self, address: str) -> Dict[str, Any]:
         """Retrieve base account information for an address."""
         encoded = quote(address, safe="")
