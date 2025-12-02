@@ -70,6 +70,22 @@ async def test_account_overview_unreachable():
 
 
 @pytest.mark.asyncio
+async def test_account_overview_names_unauthorized():
+    class StubClient:
+        async def fetch_address_info(self, address):
+            return {"address": address}
+
+        async def fetch_address_balance(self, address, asset_id=0):
+            return {"balance": "1"}
+
+        async def fetch_names_by_owner(self, address):
+            raise UnauthorizedError("nope")
+
+    result = await get_account_overview("QgB7zMfujQMLkisp1Lc8PBkVYs75sYB3vV", client=StubClient())
+    assert result == {"error": "Unauthorized or API key required."}
+
+
+@pytest.mark.asyncio
 async def test_get_balance_happy_path():
     class StubClient:
         async def fetch_address_balance(self, *_args, **_kwargs):

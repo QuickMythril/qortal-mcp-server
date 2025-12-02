@@ -89,6 +89,26 @@ async def test_get_node_status_qortal_api_error():
     assert result == {"error": "Qortal API error."}
 
 
+@pytest.mark.asyncio
+async def test_get_node_status_unexpected_exception():
+    class StubClient:
+        async def fetch_node_status(self):
+            raise Exception("boom")
+
+    result = await get_node_status(client=StubClient())
+    assert result == {"error": "Unexpected error while retrieving node status."}
+
+
+@pytest.mark.asyncio
+async def test_get_node_info_unexpected_exception():
+    class StubClient:
+        async def fetch_node_info(self):
+            raise Exception("boom")
+
+    result = await get_node_info(client=StubClient())
+    assert result == {"error": "Unexpected error while retrieving node info."}
+
+
 def test_node_helpers():
     assert _to_int("5") == 5
     assert _to_int("bad", default=7) == 7

@@ -56,6 +56,18 @@ async def test_get_name_info_unauthorized_and_unreachable():
     assert await get_name_info("good-name", client=UnreachableClient()) == {"error": "Node unreachable"}
 
 
+@pytest.mark.asyncio
+async def test_get_name_info_qortal_api_error():
+    class StubClient:
+        async def fetch_name_info(self, *_args, **_kwargs):
+            from qortal_mcp.qortal_api.client import QortalApiError
+
+            raise QortalApiError("fail")
+
+    result = await get_name_info("good-name", client=StubClient())
+    assert result == {"error": "Qortal API error."}
+
+
 def test_truncate_data():
     assert _truncate_data(None, 5) is None
     assert _truncate_data("short", 10) == "short"
