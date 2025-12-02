@@ -82,3 +82,22 @@ async def test_server_error_maps_to_generic():
     with pytest.raises(QortalApiError) as excinfo:
         await client.fetch_node_status()
     assert excinfo.value.status_code == 500
+
+
+@pytest.mark.asyncio
+async def test_path_encoding_and_params(monkeypatch):
+    captured = {}
+
+    class CaptureClient:
+        async def get(self, path, params=None, headers=None):
+            captured["path"] = path
+            captured["params"] = params
+            return MockResponse(200, {})
+
+        async def aclose(self):
+            return None
+
+    client = QortalApiClient(async_client=CaptureClient())
+    await client.fetch_address_balance("Q address/with space", asset_id=7)
+    assert "%20" in captured["path"] or "%2F" in captured["path"]
+    assert captured["params"]["assetId"] == 7

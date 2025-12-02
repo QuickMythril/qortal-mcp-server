@@ -19,3 +19,4 @@ def test_metrics_endpoint_counts_requests():
     data = resp.json()
     # Two requests so far: /health and /metrics
     assert data.get("requests", 0) >= 2
+    assert isinstance(data.get("recent_request_durations_ms"), dict)

@@ -35,3 +35,15 @@ def test_metrics_increments_requests(client):
     assert metrics_resp.status_code == 200
     data = metrics_resp.json()
     assert data.get("requests", 0) >= 2  # validate + metrics
+
+
+def test_metrics_rate_limited_increment(client, monkeypatch):
+    from qortal_mcp import server as server_mod
+
+    async def deny(*_args, **_kwargs):
+        return False
+
+    monkeypatch.setattr(server_mod.rate_limiter, "allow", deny)
+    client.get("/tools/node_info")
+    data = client.get("/metrics").json()
+    assert data.get("rate_limited", 0) >= 1

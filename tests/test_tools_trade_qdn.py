@@ -53,3 +53,11 @@ async def test_qdn_clamps_limit_and_maps_results():
     assert isinstance(results, list)
     assert len(results) == 5
     assert results[0]["signature"] == "0"
+
+
+@pytest.mark.asyncio
+async def test_qdn_invalid_service_code():
+    result = await search_qdn(service="not-int")
+    assert result == {"error": "Invalid service code."}
+    result = await search_qdn(service=-1)
+    assert result == {"error": "Invalid service code."}
