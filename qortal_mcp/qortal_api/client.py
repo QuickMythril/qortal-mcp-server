@@ -355,6 +355,73 @@ class QortalApiClient:
             params["inverse"] = inverse
         return await self._request(f"/crosschain/price/{encoded}", params=params or None, expect_dict=False)
 
+    async def fetch_block_at_timestamp(self, timestamp: int) -> Any:
+        """Fetch block at/just before a timestamp."""
+        return await self._request(f"/blocks/timestamp/{timestamp}")
+
+    async def fetch_block_height(self) -> Any:
+        """Fetch current blockchain height."""
+        return await self._request("/blocks/height", expect_dict=False)
+
+    async def fetch_block_by_height(self, height: int) -> Any:
+        """Fetch block info by height."""
+        return await self._request(f"/blocks/byheight/{height}")
+
+    async def fetch_block_summaries(self, *, start: int, end: int, count: Optional[int] = None) -> Any:
+        """Fetch block summaries in a range."""
+        params: Dict[str, Any] = {"start": start, "end": end}
+        if count is not None:
+            params["count"] = count
+        return await self._request("/blocks/summaries", params=params, expect_dict=False)
+
+    async def fetch_block_range(
+        self,
+        *,
+        height: int,
+        count: int,
+        reverse: Optional[bool] = None,
+        include_online_signatures: Optional[bool] = None,
+    ) -> Any:
+        """Fetch blocks in a range."""
+        params: Dict[str, Any] = {"count": count}
+        if reverse is not None:
+            params["reverse"] = reverse
+        if include_online_signatures is not None:
+            params["includeOnlineSignatures"] = include_online_signatures
+        return await self._request(f"/blocks/range/{height}", params=params, expect_dict=False)
+
+    async def search_transactions(
+        self,
+        *,
+        start_block: Optional[int] = None,
+        block_limit: Optional[int] = None,
+        tx_types: Optional[List[str | int]] = None,
+        address: Optional[str] = None,
+        confirmation_status: Optional[str] = None,
+        limit: Optional[int] = None,
+        offset: Optional[int] = None,
+        reverse: Optional[bool] = None,
+    ) -> Any:
+        """Search transactions (read-only)."""
+        params: Dict[str, Any] = {}
+        if start_block is not None:
+            params["startBlock"] = start_block
+        if block_limit is not None:
+            params["blockLimit"] = block_limit
+        if tx_types:
+            params["txType"] = tx_types
+        if address:
+            params["address"] = address
+        if confirmation_status:
+            params["confirmationStatus"] = confirmation_status
+        if limit is not None:
+            params["limit"] = limit
+        if offset is not None:
+            params["offset"] = offset
+        if reverse is not None:
+            params["reverse"] = reverse
+        return await self._request("/transactions/search", params=params, expect_dict=False)
+
     async def fetch_assets(
         self,
         *,

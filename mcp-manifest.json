@@ -31,6 +31,12 @@
     "search_qdn",
     "list_assets",
     "get_asset_info",
-    "get_asset_balances"
+    "get_asset_balances",
+    "get_block_at_timestamp",
+    "get_block_height",
+    "get_block_by_height",
+    "list_block_summaries",
+    "list_block_range",
+    "search_transactions"
   ]
 }

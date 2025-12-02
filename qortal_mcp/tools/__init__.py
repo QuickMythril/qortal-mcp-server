@@ -20,6 +20,14 @@ from .trade import (
 )
 from .qdn import search_qdn
 from .assets import list_assets, get_asset_info, get_asset_balances
+from .blocks import (
+    get_block_at_timestamp,
+    get_block_height,
+    get_block_by_height,
+    list_block_summaries,
+    list_block_range,
+)
+from .transactions import search_transactions
 from . import validators
 
 __all__ = [
@@ -46,5 +54,11 @@ __all__ = [
     "list_assets",
     "get_asset_info",
     "get_asset_balances",
+    "get_block_at_timestamp",
+    "get_block_height",
+    "get_block_by_height",
+    "list_block_summaries",
+    "list_block_range",
+    "search_transactions",
     "validators",
 ]
