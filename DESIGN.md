@@ -411,8 +411,9 @@ Responsibilities: fileciteturn0file0
 - `tools.*` – tool implementations that validate inputs, orchestrate calls to
   `qortal_api.client`, and normalize outputs.
 - `server.py` – FastAPI app exposing each tool as an HTTP endpoint and/or
-  MCP/JSON‑RPC method, depending on integration. Also provides `/health` and a
-  minimal MCP gateway (see `mcp-manifest.json`).
+  MCP/JSON‑RPC method, depending on integration. Also provides `/health`,
+  `/metrics`, and a minimal MCP gateway (see `mcp-manifest.json`) with
+  per-request IDs in responses.
 
 ### 4.3 Error handling
 
