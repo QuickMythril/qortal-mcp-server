@@ -344,8 +344,9 @@ async def mcp_gateway(request: Request) -> JSONResponse:
         if limited:
             return limited
         result = await mcp.call_tool(tool_name, tool_params)
+        wrapped = _wrap_tool_result(result)
         return _respond(
-            _jsonrpc_success_payload(rpc_id, result, request_id=request_id),
+            _jsonrpc_success_payload(rpc_id, wrapped, request_id=request_id),
             outcome="success",
             method_label=method,
             tool_label=tool_name,
@@ -379,3 +380,16 @@ def _jsonrpc_error_payload(rpc_id: Any, code: int, message: str, request_id: Opt
     if request_id is not None:
         payload["requestId"] = request_id
     return payload
+
+
+def _wrap_tool_result(result: Any) -> Dict[str, Any]:
+    """
+    Shape tool outputs into MCP-friendly content array.
+    """
+    # If the tool already returned an error dict, pass it through as object content.
+    content_item: Dict[str, Any]
+    if isinstance(result, str):
+        content_item = {"type": "text", "text": result}
+    else:
+        content_item = {"type": "object", "object": result}
+    return {"content": [content_item]}

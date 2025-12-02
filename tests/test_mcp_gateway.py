@@ -33,7 +33,9 @@ def test_mcp_call_tool_validate_address():
     assert resp.status_code == 200
     data = resp.json()
     assert data["id"] == 2
-    assert data["result"] == {"isValid": False}
+    content = data["result"]["content"][0]
+    assert content["type"] == "object"
+    assert content["object"] == {"isValid": False}
 
 
 def test_mcp_initialize():
@@ -85,7 +87,9 @@ def test_mcp_tools_call_alias():
     assert resp.status_code == 200
     data = resp.json()
     assert data["id"] == 4
-    assert data["result"] == {"isValid": False}
+    content = data["result"]["content"][0]
+    assert content["type"] == "object"
+    assert content["object"] == {"isValid": False}
 
 
 def test_mcp_unknown_method_returns_error():
