@@ -1,7 +1,7 @@
 import pytest
 
 from qortal_mcp.tools.node import get_node_info
-from qortal_mcp.tools.node import get_node_status
+from qortal_mcp.tools.node import get_node_status, _to_int, _to_bool
 from qortal_mcp.qortal_api.client import UnauthorizedError, NodeUnreachableError, QortalApiError
 
 
@@ -87,3 +87,11 @@ async def test_get_node_status_qortal_api_error():
 
     result = await get_node_status(client=StubClient())
     assert result == {"error": "Qortal API error."}
+
+
+def test_node_helpers():
+    assert _to_int("5") == 5
+    assert _to_int("bad", default=7) == 7
+    assert _to_int(None, allow_none=True) is None
+    assert _to_bool("true") is True
+    assert _to_bool("FALSE") is False

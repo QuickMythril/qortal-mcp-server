@@ -119,3 +119,56 @@ async def test_api_key_header_added():
     cfg = QortalApiClient(config=QortalConfig(api_key="secret"), async_client=CaptureClient())
     await cfg.fetch_node_status()
     assert captured["headers"].get("X-API-KEY") == "secret"
+
+
+@pytest.mark.asyncio
+async def test_non_json_response_maps_to_error_log(monkeypatch):
+    class CaptureClient:
+        async def get(self, *_args, **_kwargs):
+            class Resp:
+                status_code = 200
+
+                def json(self):
+                    raise ValueError("no json")
+
+            return Resp()
+
+        async def aclose(self):
+            return None
+
+    client = QortalApiClient(async_client=CaptureClient())
+    with pytest.raises(QortalApiError):
+        await client.fetch_node_status()
+
+
+@pytest.mark.asyncio
+async def test_expect_dict_true_with_non_dict():
+    mock = MockAsyncClient([MockResponse(200, ["list"])])
+    client = QortalApiClient(async_client=mock)
+    with pytest.raises(QortalApiError):
+        await client.fetch_node_info()
+
+
+@pytest.mark.asyncio
+async def test_resource_not_found_mapping():
+    mock = MockAsyncClient([MockResponse(404, {"error": "SOMETHING_ELSE"})])
+    client = QortalApiClient(async_client=mock)
+    with pytest.raises(QortalApiError) as excinfo:
+        await client.fetch_node_status()
+    assert str(excinfo.value) == "Resource not found."
+
+
+@pytest.mark.asyncio
+async def test_request_error_maps_to_node_unreachable():
+    import httpx
+
+    class FailClient:
+        async def get(self, *_args, **_kwargs):
+            raise httpx.RequestError("fail")
+
+        async def aclose(self):
+            return None
+
+    client = QortalApiClient(async_client=FailClient())
+    with pytest.raises(NodeUnreachableError):
+        await client.fetch_node_status()

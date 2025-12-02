@@ -78,7 +78,7 @@ async def test_names_by_address_invalid_short_circuit():
 async def test_names_by_address_happy_path_with_limit():
     class StubClient:
         async def fetch_names_by_owner(self, *_args, **_kwargs):
-            return ["a", "b", "c", "d"]
+            return {"names": [{"name": "a"}, {"name": "b"}, {"name": "c"}]}
 
     result = await get_names_by_address("QgB7zMfujQMLkisp1Lc8PBkVYs75sYB3vV", limit=2, client=StubClient())
     assert result["names"] == ["a", "b"]  # clamped
