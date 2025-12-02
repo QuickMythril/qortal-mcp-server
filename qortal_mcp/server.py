@@ -123,7 +123,11 @@ async def _enforce_rate_limit(tool_name: str) -> Optional[JSONResponse]:
     if not allowed:
         logger.warning("tool=%s outcome=rate_limited", tool_name)
         default_metrics.incr_rate_limited()
-        return JSONResponse(status_code=429, content={"error": "Rate limit exceeded"})
+        # Return a JSON-RPC style error envelope for MCP clients.
+        return JSONResponse(
+            status_code=429,
+            content={"jsonrpc": "2.0", "error": {"code": 429, "message": "Rate limit exceeded"}},
+        )
     return None
 
 
