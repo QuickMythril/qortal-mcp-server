@@ -22,6 +22,12 @@ async def test_names_by_address_invalid_short_circuit():
 
 
 def test_metrics_tool_success_and_error_counts(monkeypatch):
+    from qortal_mcp import server as server_mod
+
+    async def always_allow(*_args, **_kwargs):
+        return True
+
+    monkeypatch.setattr(server_mod.rate_limiter, "allow", always_allow)
     client = TestClient(app)
     # Successful validate
     client.get("/tools/validate_address/QgB7zMfujQMLkisp1Lc8PBkVYs75sYB3vV")

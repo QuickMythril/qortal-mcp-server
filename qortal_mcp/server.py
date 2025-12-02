@@ -57,6 +57,9 @@ rate_limiter = PerKeyRateLimiter(
     per_tool=default_config.per_tool_rate_limits,
 )
 HEALTH_STATUS = {"status": "ok"}
+APP_VERSION = "0.1.0"
+MCP_SERVER_NAME = "qortal-mcp-server"
+MCP_SERVER_VERSION = APP_VERSION
 
 
 @asynccontextmanager
@@ -70,7 +73,7 @@ async def lifespan(_app: FastAPI):
 app = FastAPI(
     title="Qortal MCP Server",
     description="Read-only Qortal tool surface for LLM agents.",
-    version="0.1.0",
+    version=APP_VERSION,
     lifespan=lifespan,
 )
 
@@ -248,31 +251,91 @@ async def mcp_gateway(request: Request) -> JSONResponse:
     Minimal JSON-RPC-like gateway for MCP-style integrations.
 
     Supported methods:
-      - list_tools
-      - call_tool (with params: tool, params)
+      - initialize
+      - list_tools / tools/list
+      - call_tool / tools/call
     """
-    body = await request.json()
+    request_id = getattr(request.state, "request_id", None)
+    try:
+        body = await request.json()
+    except Exception:
+        return JSONResponse(
+            status_code=400,
+            content=_jsonrpc_error_payload(None, -32700, "Parse error", request_id=request_id),
+        )
+
+    if not isinstance(body, dict):
+        return JSONResponse(
+            status_code=400,
+            content=_jsonrpc_error_payload(None, -32600, "Invalid request", request_id=request_id),
+        )
+
     method = body.get("method")
     rpc_id = body.get("id")
-    params = body.get("params") or {}
+    raw_params = body.get("params")
+    if raw_params is None:
+        params = {}
+    elif isinstance(raw_params, dict):
+        params = raw_params
+    else:
+        return JSONResponse(
+            content=_jsonrpc_error_payload(rpc_id, -32602, "Invalid params", request_id=request_id)
+        )
 
-    if method == "list_tools":
+    if not method:
+        return JSONResponse(content=_jsonrpc_error_payload(rpc_id, -32600, "Invalid request", request_id=request_id))
+
+    if method == "initialize":
+        protocol_version = params.get("protocolVersion")
+        if not isinstance(protocol_version, str) or not protocol_version:
+            return JSONResponse(
+                content=_jsonrpc_error_payload(rpc_id, -32602, "Invalid params", request_id=request_id)
+            )
+
+        result = {
+            "protocolVersion": protocol_version,
+            "serverInfo": {"name": MCP_SERVER_NAME, "version": MCP_SERVER_VERSION},
+            "capabilities": {"tools": {"listChanged": False}},
+        }
+        return JSONResponse(content=_jsonrpc_success_payload(rpc_id, result, request_id=request_id))
+
+    if method in ("list_tools", "tools/list"):
         limited = await _enforce_rate_limit("list_tools")
         if limited:
             return limited
         result = mcp.list_tools()
-    elif method == "call_tool":
-        tool_name = params.get("tool")
-        tool_params = params.get("params") or {}
+        return JSONResponse(content=_jsonrpc_success_payload(rpc_id, result, request_id=request_id))
+
+    if method in ("call_tool", "tools/call"):
+        tool_name = params.get("tool") or params.get("name")
+        tool_params = params.get("params")
+        if tool_params is None:
+            tool_params = params.get("arguments") or {}
+        if not isinstance(tool_params, dict):
+            return JSONResponse(
+                content=_jsonrpc_error_payload(rpc_id, -32602, "Invalid params", request_id=request_id)
+            )
         limited = await _enforce_rate_limit(tool_name or "call_tool")
         if limited:
             return limited
         result = await mcp.call_tool(tool_name, tool_params)
-    else:
-        result = {"error": "Unknown method."}
+        return JSONResponse(content=_jsonrpc_success_payload(rpc_id, result, request_id=request_id))
 
-    request_id = getattr(request.state, "request_id", None)
-    return JSONResponse(content={"jsonrpc": "2.0", "id": rpc_id, "result": result, "requestId": request_id})
+    return JSONResponse(content=_jsonrpc_error_payload(rpc_id, -32601, "Method not found", request_id=request_id))
 
 
 # Run with: uvicorn qortal_mcp.server:app --reload
+
+
+def _jsonrpc_success_payload(rpc_id: Any, result: Any, request_id: Optional[str] = None) -> Dict[str, Any]:
+    payload: Dict[str, Any] = {"jsonrpc": "2.0", "id": rpc_id, "result": result}
+    if request_id is not None:
+        payload["requestId"] = request_id
+    return payload
+
+
+def _jsonrpc_error_payload(rpc_id: Any, code: int, message: str, request_id: Optional[str] = None) -> Dict[str, Any]:
+    payload: Dict[str, Any] = {"jsonrpc": "2.0", "id": rpc_id, "error": {"code": code, "message": message}}
+    if request_id is not None:
+        payload["requestId"] = request_id
+    return payload
