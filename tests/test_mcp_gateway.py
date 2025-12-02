@@ -1,8 +1,10 @@
 import json
+import pytest
 
 from fastapi.testclient import TestClient
 
 from qortal_mcp.config import default_config
+from qortal_mcp import mcp
 from qortal_mcp.server import MCP_SERVER_NAME, MCP_SERVER_VERSION, app
 from qortal_mcp.tools.validators import ADDRESS_REGEX
 
@@ -120,7 +122,7 @@ def test_mcp_invalid_params_type():
 
 def test_mcp_parse_error_invalid_json():
     client = TestClient(app)
-    resp = client.post("/mcp", data="{not json", headers={"Content-Type": "application/json"})
+    resp = client.post("/mcp", content=b"{not json", headers={"Content-Type": "application/json"})
     assert resp.status_code == 400
     data = resp.json()
     assert data["error"]["code"] == -32700
@@ -238,3 +240,32 @@ def test_mcp_empty_list_returns_valid_content(monkeypatch):
     assert content["type"] == "text"
     assert content["text"].strip() == "[]"
     assert data["result"]["structuredContent"] == []
+
+
+@pytest.mark.asyncio
+async def test_mcp_call_tool_invalid_params_type_error():
+    result = await mcp.call_tool("get_balance", params={})
+    assert result == {"error": "Invalid parameters."}
+
+
+def test_mcp_wraps_numeric_result(monkeypatch):
+    async def fake_call_tool(name, params=None):
+        return 7
+
+    monkeypatch.setattr("qortal_mcp.server.mcp.call_tool", fake_call_tool)
+    client = TestClient(app)
+    resp = client.post(
+        "/mcp",
+        json={
+            "jsonrpc": "2.0",
+            "id": 17,
+            "method": "tools/call",
+            "params": {"name": "validate_address", "arguments": {"address": "Q..."}},
+        },
+    )
+    assert resp.status_code == 200
+    data = resp.json()
+    content = data["result"]["content"][0]
+    assert content["type"] == "text"
+    assert content["text"] == "7"
+    assert data["result"]["structuredContent"] == 7

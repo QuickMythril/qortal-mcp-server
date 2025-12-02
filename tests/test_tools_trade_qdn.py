@@ -4,6 +4,7 @@ from qortal_mcp.config import QortalConfig
 from qortal_mcp.tools.qdn import search_qdn
 from qortal_mcp.tools.trade import list_trade_offers
 from qortal_mcp.qortal_api import UnauthorizedError
+from qortal_mcp.qortal_api.client import NodeUnreachableError, QortalApiError
 
 
 @pytest.mark.asyncio
@@ -60,6 +61,25 @@ async def test_list_trade_offers_normalizes_core_fields():
 
 
 @pytest.mark.asyncio
+async def test_list_trade_offers_skips_non_dict_and_handles_unreachable():
+    class StubClient:
+        calls = 0
+
+        async def fetch_trade_offers(self, *, limit: int):
+            StubClient.calls += 1
+            if StubClient.calls == 1:
+                return ["not-a-dict"]
+            raise NodeUnreachableError("down")
+
+    # First call should skip invalid entry and return empty list
+    offers = await list_trade_offers(client=StubClient())
+    assert offers == []
+    # Second call triggers unreachable error mapping
+    offers = await list_trade_offers(client=StubClient())
+    assert offers == {"error": "Node unreachable"}
+
+
+@pytest.mark.asyncio
 async def test_qdn_requires_address_or_service():
     result = await search_qdn()
     assert result == {"error": "At least one of address or service is required."}
@@ -91,3 +111,43 @@ async def test_qdn_invalid_service_code():
     assert result == {"error": "Invalid service code."}
     result = await search_qdn(service=-1)
     assert result == {"error": "Invalid service code."}
+
+
+@pytest.mark.asyncio
+async def test_qdn_service_only_ok():
+    class StubClient:
+        async def search_qdn(self, *, address=None, service=None, limit=None):
+            return [{"signature": "s", "publisher": "Q", "service": service, "timestamp": 1}]
+
+    result = await search_qdn(service=1, client=StubClient())
+    assert result and result[0]["service"] == 1
+
+
+@pytest.mark.asyncio
+async def test_qdn_address_and_service_ok():
+    class StubClient:
+        async def search_qdn(self, *, address=None, service=None, limit=None):
+            return [{"signature": "s", "publisher": address, "service": service, "timestamp": 1}]
+
+    result = await search_qdn(address="QgB7zMfujQMLkisp1Lc8PBkVYs75sYB3vV", service=1, client=StubClient())
+    assert result and result[0]["publisher"].startswith("Q")
+
+
+@pytest.mark.asyncio
+async def test_qdn_node_unreachable():
+    class StubClient:
+        async def search_qdn(self, *, address=None, service=None, limit=None):
+            raise NodeUnreachableError("down")
+
+    result = await search_qdn(address="QgB7zMfujQMLkisp1Lc8PBkVYs75sYB3vV", client=StubClient())
+    assert result == {"error": "Node unreachable"}
+
+
+@pytest.mark.asyncio
+async def test_qdn_unexpected_error():
+    class StubClient:
+        async def search_qdn(self, *, address=None, service=None, limit=None):
+            raise QortalApiError("boom")
+
+    result = await search_qdn(address="QgB7zMfujQMLkisp1Lc8PBkVYs75sYB3vV", client=StubClient())
+    assert result == {"error": "Qortal API error."}

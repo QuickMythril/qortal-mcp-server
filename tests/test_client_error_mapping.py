@@ -9,6 +9,7 @@ from qortal_mcp.qortal_api.client import (
     UnauthorizedError,
     QortalApiError,
 )
+from qortal_mcp.config import QortalConfig
 
 
 class MockResponse:
@@ -101,3 +102,20 @@ async def test_path_encoding_and_params(monkeypatch):
     await client.fetch_address_balance("Q address/with space", asset_id=7)
     assert "%20" in captured["path"] or "%2F" in captured["path"]
     assert captured["params"]["assetId"] == 7
+
+
+@pytest.mark.asyncio
+async def test_api_key_header_added():
+    captured = {}
+
+    class CaptureClient:
+        async def get(self, path, params=None, headers=None):
+            captured["headers"] = headers
+            return MockResponse(200, {})
+
+        async def aclose(self):
+            return None
+
+    cfg = QortalApiClient(config=QortalConfig(api_key="secret"), async_client=CaptureClient())
+    await cfg.fetch_node_status()
+    assert captured["headers"].get("X-API-KEY") == "secret"

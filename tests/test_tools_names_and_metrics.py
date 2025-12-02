@@ -3,12 +3,41 @@ from fastapi.testclient import TestClient
 
 from qortal_mcp.server import app
 from qortal_mcp.tools.names import get_name_info, get_names_by_address
+from qortal_mcp.qortal_api.client import NameNotFoundError, UnauthorizedError, NodeUnreachableError
 
 
 @pytest.mark.asyncio
 async def test_get_name_info_invalid_name():
     result = await get_name_info("!!bad")
     assert result == {"error": "Invalid name."}
+
+
+@pytest.mark.asyncio
+async def test_get_name_info_happy_path():
+    class StubClient:
+        async def fetch_name_info(self, name):
+            return {
+                "name": name,
+                "owner": "QOWNER",
+                "data": "x" * 10,
+                "isForSale": False,
+                "salePrice": None,
+            }
+
+    result = await get_name_info("good-name", client=StubClient())
+    assert result["name"] == "good-name"
+    assert result["owner"] == "QOWNER"
+    assert result["data"].startswith("x")
+
+
+@pytest.mark.asyncio
+async def test_get_name_info_error_mapping():
+    class StubClient:
+        async def fetch_name_info(self, *_args, **_kwargs):
+            raise NameNotFoundError("missing")
+
+    result = await get_name_info("good-name", client=StubClient())
+    assert result == {"error": "Name not found."}
 
 
 @pytest.mark.asyncio
@@ -19,6 +48,36 @@ async def test_names_by_address_invalid_short_circuit():
 
     result = await get_names_by_address("bad", client=FailClient())
     assert result == {"error": "Invalid Qortal address."}
+
+
+@pytest.mark.asyncio
+async def test_names_by_address_happy_path_with_limit():
+    class StubClient:
+        async def fetch_names_by_owner(self, *_args, **_kwargs):
+            return ["a", "b", "c", "d"]
+
+    result = await get_names_by_address("QgB7zMfujQMLkisp1Lc8PBkVYs75sYB3vV", limit=2, client=StubClient())
+    assert result["names"] == ["a", "b"]  # clamped
+
+
+@pytest.mark.asyncio
+async def test_names_by_address_error_mapping():
+    class StubClient:
+        async def fetch_names_by_owner(self, *_args, **_kwargs):
+            raise UnauthorizedError("nope")
+
+    result = await get_names_by_address("QgB7zMfujQMLkisp1Lc8PBkVYs75sYB3vV", client=StubClient())
+    assert result == {"error": "Unauthorized or API key required."}
+
+
+@pytest.mark.asyncio
+async def test_names_by_address_unreachable():
+    class StubClient:
+        async def fetch_names_by_owner(self, *_args, **_kwargs):
+            raise NodeUnreachableError("down")
+
+    result = await get_names_by_address("QgB7zMfujQMLkisp1Lc8PBkVYs75sYB3vV", client=StubClient())
+    assert result == {"error": "Node unreachable"}
 
 
 def test_metrics_tool_success_and_error_counts(monkeypatch):
