@@ -57,3 +57,33 @@ async def test_get_node_status_unreachable():
 
     result = await get_node_status(client=StubClient())
     assert result == {"error": "Node unreachable"}
+
+
+@pytest.mark.asyncio
+async def test_get_node_info_error_mapping():
+    class StubClient:
+        async def fetch_node_info(self):
+            raise UnauthorizedError("nope")
+
+    result = await get_node_info(client=StubClient())
+    assert result == {"error": "Unauthorized or API key required."}
+
+
+@pytest.mark.asyncio
+async def test_get_node_info_qortal_api_error():
+    class StubClient:
+        async def fetch_node_info(self):
+            raise QortalApiError("fail")
+
+    result = await get_node_info(client=StubClient())
+    assert result == {"error": "Qortal API error."}
+
+
+@pytest.mark.asyncio
+async def test_get_node_status_qortal_api_error():
+    class StubClient:
+        async def fetch_node_status(self):
+            raise QortalApiError("fail")
+
+    result = await get_node_status(client=StubClient())
+    assert result == {"error": "Qortal API error."}

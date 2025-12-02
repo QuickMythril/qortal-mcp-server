@@ -269,3 +269,25 @@ def test_mcp_wraps_numeric_result(monkeypatch):
     assert content["type"] == "text"
     assert content["text"] == "7"
     assert data["result"]["structuredContent"] == 7
+
+
+@pytest.mark.asyncio
+async def test_call_tool_handles_exception(monkeypatch):
+    from qortal_mcp import mcp as mcp_mod
+    from qortal_mcp.mcp import ToolDefinition
+
+    def boom(**_kwargs):
+        raise RuntimeError("boom")
+
+    mcp_mod.TOOL_REGISTRY["boom_tool"] = ToolDefinition(
+        name="boom_tool",
+        description="",
+        params={},
+        input_schema={"type": "object", "properties": {}},
+        callable=boom,
+    )
+    try:
+        result = await mcp_mod.call_tool("boom_tool", params={})
+        assert result == {"error": "Unexpected error while calling tool."}
+    finally:
+        mcp_mod.TOOL_REGISTRY.pop("boom_tool", None)

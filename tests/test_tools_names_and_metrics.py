@@ -2,7 +2,7 @@ import pytest
 from fastapi.testclient import TestClient
 
 from qortal_mcp.server import app
-from qortal_mcp.tools.names import get_name_info, get_names_by_address
+from qortal_mcp.tools.names import get_name_info, get_names_by_address, _truncate_data
 from qortal_mcp.qortal_api.client import NameNotFoundError, UnauthorizedError, NodeUnreachableError
 
 
@@ -41,6 +41,30 @@ async def test_get_name_info_error_mapping():
 
 
 @pytest.mark.asyncio
+async def test_get_name_info_unauthorized_and_unreachable():
+    class UnauthorizedClient:
+        async def fetch_name_info(self, *_args, **_kwargs):
+            raise UnauthorizedError("nope")
+
+    class UnreachableClient:
+        async def fetch_name_info(self, *_args, **_kwargs):
+            raise NodeUnreachableError("down")
+
+    assert await get_name_info("good-name", client=UnauthorizedClient()) == {
+        "error": "Unauthorized or API key required."
+    }
+    assert await get_name_info("good-name", client=UnreachableClient()) == {"error": "Node unreachable"}
+
+
+def test_truncate_data():
+    assert _truncate_data(None, 5) is None
+    assert _truncate_data("short", 10) == "short"
+    long_text = "x" * 50
+    truncated = _truncate_data(long_text, 20)
+    assert truncated.endswith("... (truncated)")
+
+
+@pytest.mark.asyncio
 async def test_names_by_address_invalid_short_circuit():
     class FailClient:
         async def fetch_names_by_owner(self, *_args, **_kwargs):
@@ -68,6 +92,16 @@ async def test_names_by_address_error_mapping():
 
     result = await get_names_by_address("QgB7zMfujQMLkisp1Lc8PBkVYs75sYB3vV", client=StubClient())
     assert result == {"error": "Unauthorized or API key required."}
+
+
+@pytest.mark.asyncio
+async def test_names_by_address_not_found():
+    class StubClient:
+        async def fetch_names_by_owner(self, *_args, **_kwargs):
+            raise NameNotFoundError("missing")
+
+    result = await get_names_by_address("QgB7zMfujQMLkisp1Lc8PBkVYs75sYB3vV", client=StubClient())
+    assert result == {"error": "Qortal API error."}
 
 
 @pytest.mark.asyncio
