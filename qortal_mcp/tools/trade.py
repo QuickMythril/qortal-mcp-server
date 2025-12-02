@@ -18,16 +18,29 @@ logger = logging.getLogger(__name__)
 
 
 def _normalize_offer(raw_offer: Dict[str, Any]) -> Dict[str, Any]:
+    # The Core response varies by version; prefer the most specific fields and
+    # fall back to legacy names to avoid nulls.
+    trade_address = raw_offer.get("tradeAddress") or raw_offer.get("qortalCreatorTradeAddress") or raw_offer.get(
+        "qortalAtAddress"
+    )
+    creator = raw_offer.get("creator") or raw_offer.get("qortalCreator")
+    timestamp = raw_offer.get("timestamp") or raw_offer.get("creationTimestamp")
+    foreign_currency = raw_offer.get("foreignCurrency") or raw_offer.get("foreignBlockchain")
+    expected_foreign = (
+        raw_offer.get("expectedForeign")
+        or raw_offer.get("expectedForeignAmount")
+        or raw_offer.get("expectedBitcoin")
+        or raw_offer.get("foreignAmount")
+    )
+
     return {
-        "tradeAddress": raw_offer.get("tradeAddress"),
-        "creator": raw_offer.get("creator"),
+        "tradeAddress": trade_address,
+        "creator": creator,
         "offeringQort": str(raw_offer.get("qortAmount") or raw_offer.get("offeringQort") or "0"),
-        "expectedForeign": str(
-            raw_offer.get("expectedForeign") or raw_offer.get("foreignAmount") or "0"
-        ),
-        "foreignCurrency": raw_offer.get("foreignCurrency"),
+        "expectedForeign": str(expected_foreign or "0"),
+        "foreignCurrency": foreign_currency,
         "mode": raw_offer.get("mode"),
-        "timestamp": raw_offer.get("timestamp"),
+        "timestamp": timestamp,
     }
 
 
@@ -64,4 +77,3 @@ async def list_trade_offers(
             if isinstance(entry, dict):
                 offers.append(_normalize_offer(entry))
     return offers[:effective_limit]
-
