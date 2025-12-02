@@ -195,6 +195,8 @@ as an HTTP tool host, depending on your integration.
 
 ### Available tool routes (v1)
 
+- `GET /health`
+- `GET /metrics`
 - `GET /tools/node_status`
 - `GET /tools/node_info`
 - `GET /tools/account_overview/{address}`

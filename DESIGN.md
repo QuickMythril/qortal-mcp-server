@@ -415,6 +415,15 @@ Responsibilities: fileciteturn0file0
   `/metrics`, and a minimal MCP gateway (see `mcp-manifest.json`) with
   per-request IDs in responses.
 
+### 4.5 Observability
+
+- Request IDs are generated per call and returned via `X-Request-ID` (HTTP) and
+  `requestId` (MCP JSON-RPC).
+- `/metrics` exposes in-process counters (requests, rate-limited hits, per-tool
+  successes/errors, recent durations). These are per-process; aggregate
+  externally in multi-worker deployments.
+- Log level/format are configurable via environment (JSON logging supported).
+
 ### 4.3 Error handling
 
 - Client helpers translate HTTP errors and Qortal `ApiError` codes into Python
