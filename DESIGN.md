@@ -49,18 +49,28 @@ The server only uses a curated subset of **GET** endpoints that Qortal Core
 exposes. These are considered read‑only and safe when combined with sane
 limits and validation: fileciteturn0file0
 
-- `/admin/status`, `/admin/info`, `/admin/uptime`, `/admin/summary`
-- `/addresses/{address}`
-- `/addresses/balance/{address}`
-- `/addresses/validate/{address}` (optionally, for validation)
-- `/addresses/online` (optional, for online minting accounts)
-- `/names/{name}`
-- `/names/address/{address}`
-- `/names/forsale` (deferred)
-- `/crosschain/tradeoffers`
-- `/arbitrary/search`
-- A small subset of `/assets/*` read‑only endpoints (DEX views – deferred)
-- `/assets` (list), `/assets/info`, `/assets/balances` (read‑only, with limits)
+ - `/admin/status`, `/admin/info`, `/admin/uptime`, `/admin/summary`
+ - `/addresses/{address}`
+ - `/addresses/balance/{address}`
+ - `/addresses/validate/{address}` (optionally, for validation)
+ - `/addresses/online` (optional, for online minting accounts)
+ - `/names/{name}`
+ - `/names/address/{address}`
+ - `/names/forsale` (deferred)
+ - `/crosschain/tradeoffers`
+ - `/crosschain/tradeoffers/hidden`
+ - `/crosschain/trade/{ataddress}`
+ - `/crosschain/trades`
+ - `/crosschain/ledger/{publicKey}`
+ - `/crosschain/price/{blockchain}`
+ - `/arbitrary/search`
+ - `/assets` (list), `/assets/info`, `/assets/balances` (read‑only, with limits)
+ - `/blocks/timestamp/{timestamp}`
+ - `/blocks/height`
+ - `/blocks/byheight/{height}`
+ - `/blocks/summaries` (start/end/count)
+ - `/blocks/range/{height}` (count/reverse/includeOnlineSignatures)
+ - `/transactions/search` (read‑only GET; constrained per Core rules)
 
 No POST/PUT/DELETE operations are ever used. No endpoints that require
 transaction payloads or private keys are exposed. fileciteturn0file0

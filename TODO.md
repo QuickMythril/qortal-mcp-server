@@ -13,3 +13,8 @@ This list merges the gaps I found and the other CLI agent’s findings. Use it a
 ## Housekeeping / docs
 - When adding new endpoints or parameters, update `DESIGN.md` to document the expanded whitelist, validation, and limits.
 - Add/adjust tests for new parameter handling and validation (especially for the new arbitrary/search and crosschain filters, and offset clamping).
+
+## New work items (blocks/transactions)
+- Add block/time mapping tools: `/blocks/timestamp/{timestamp}`, `/blocks/height`, `/blocks/byheight/{height}`, `/blocks/summaries`, `/blocks/range/{height}` with chunked limits.
+- Add transaction search tool wrapping `/transactions/search` with Core constraints (txType or address or limit<=20; block ranges only with CONFIRMED); clamp limits.
+- Update MCP manifest/registry and config limits for block summary/range paging; add tests for validation.
