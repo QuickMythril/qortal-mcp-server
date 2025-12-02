@@ -9,7 +9,7 @@ from contextlib import asynccontextmanager
 from typing import Any, Dict, Optional
 
 from fastapi import FastAPI, Query, Request
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, Response
 
 from qortal_mcp import mcp
 from qortal_mcp.config import default_config
@@ -325,7 +325,7 @@ async def mcp_gateway(request: Request) -> JSONResponse:
         limited = await _enforce_rate_limit("list_tools")
         if limited:
             return limited
-        result = mcp.list_tools()
+        result = {"tools": mcp.list_tools()}
         return _respond(
             _jsonrpc_success_payload(rpc_id, result, request_id=request_id),
             outcome="success",
@@ -350,6 +350,15 @@ async def mcp_gateway(request: Request) -> JSONResponse:
             method_label=method,
             tool_label=tool_name,
         )
+
+    if method in ("notifications/initialized", "initialized"):
+        # Notifications should not return a JSON-RPC response body.
+        logger.debug(
+            "mcp initialized notification received request_id=%s",
+            request_id,
+            extra={"request_id": request_id},
+        )
+        return Response(status_code=204)
 
     payload = _jsonrpc_error_payload(rpc_id, -32601, "Method not found", request_id=request_id)
     return _respond(payload, outcome="error", method_label=method, error_code=-32601)

@@ -10,8 +10,13 @@ def test_mcp_list_tools():
     data = resp.json()
     assert data["jsonrpc"] == "2.0"
     assert data["id"] == 1
-    assert isinstance(data["result"], list)
-    assert any(tool["name"] == "validate_address" for tool in data["result"])
+    assert isinstance(data["result"], dict)
+    assert "tools" in data["result"]
+    tools = data["result"]["tools"]
+    assert any(tool["name"] == "validate_address" for tool in tools)
+    validate_tool = next(t for t in tools if t["name"] == "validate_address")
+    assert "inputSchema" in validate_tool
+    assert validate_tool["inputSchema"]["type"] == "object"
 
 
 def test_mcp_call_tool_validate_address():
@@ -62,8 +67,8 @@ def test_mcp_tools_list_alias():
     assert resp.status_code == 200
     data = resp.json()
     assert data["id"] == 3
-    assert isinstance(data["result"], list)
-    assert any(tool["name"] == "get_node_status" for tool in data["result"])
+    assert isinstance(data["result"], dict)
+    assert any(tool["name"] == "get_node_status" for tool in data["result"]["tools"])
 
 
 def test_mcp_tools_call_alias():
@@ -115,3 +120,10 @@ def test_mcp_missing_method_invalid_request():
     assert resp.status_code == 200
     data = resp.json()
     assert data["error"]["code"] == -32600
+
+
+def test_mcp_initialized_notification_ignored():
+    client = TestClient(app)
+    resp = client.post("/mcp", json={"jsonrpc": "2.0", "method": "notifications/initialized"})
+    assert resp.status_code == 204
+    assert resp.text == ""

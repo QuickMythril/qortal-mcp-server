@@ -32,6 +32,7 @@ class ToolDefinition:
     name: str
     description: str
     params: Dict[str, Any]
+    input_schema: Dict[str, Any]
     callable: ToolCallable
 
 
@@ -40,48 +41,94 @@ TOOL_REGISTRY: Dict[str, ToolDefinition] = {
         name="get_node_status",
         description="Summarize node synchronization and connectivity state.",
         params={},
+        input_schema={"type": "object", "properties": {}, "required": []},
         callable=get_node_status,
     ),
     "get_node_info": ToolDefinition(
         name="get_node_info",
         description="Return node version, uptime, and identifiers.",
         params={},
+        input_schema={"type": "object", "properties": {}, "required": []},
         callable=get_node_info,
     ),
     "get_account_overview": ToolDefinition(
         name="get_account_overview",
         description="Return account info, QORT balance, and names for an address.",
         params={"address": "string (required)"},
+        input_schema={
+            "type": "object",
+            "properties": {"address": {"type": "string", "description": "Qortal address"}},
+            "required": ["address"],
+            "additionalProperties": False,
+        },
         callable=get_account_overview,
     ),
     "get_balance": ToolDefinition(
         name="get_balance",
         description="Return balance for a given address and assetId (default 0/QORT).",
         params={"address": "string (required)", "asset_id": "integer (optional, default 0)"},
+        input_schema={
+            "type": "object",
+            "properties": {
+                "address": {"type": "string", "description": "Qortal address"},
+                "asset_id": {"type": "integer", "description": "Asset id (default 0 for QORT)"},
+            },
+            "required": ["address"],
+            "additionalProperties": False,
+        },
         callable=get_balance,
     ),
     "validate_address": ToolDefinition(
         name="validate_address",
         description="Validate Qortal address format without calling Core.",
         params={"address": "string (required)"},
+        input_schema={
+            "type": "object",
+            "properties": {"address": {"type": "string", "description": "Qortal address"}},
+            "required": ["address"],
+            "additionalProperties": False,
+        },
         callable=lambda address: validate_address(address),
     ),
     "get_name_info": ToolDefinition(
         name="get_name_info",
         description="Return details about a registered name.",
         params={"name": "string (required)"},
+        input_schema={
+            "type": "object",
+            "properties": {"name": {"type": "string", "description": "Registered Qortal name"}},
+            "required": ["name"],
+            "additionalProperties": False,
+        },
         callable=get_name_info,
     ),
     "get_names_by_address": ToolDefinition(
         name="get_names_by_address",
         description="List names owned by an address (limit enforced).",
         params={"address": "string (required)", "limit": "integer (optional)"},
+        input_schema={
+            "type": "object",
+            "properties": {
+                "address": {"type": "string", "description": "Qortal address"},
+                "limit": {"type": "integer", "minimum": 0, "description": "Optional max items"},
+            },
+            "required": ["address"],
+            "additionalProperties": False,
+        },
         callable=get_names_by_address,
     ),
     "list_trade_offers": ToolDefinition(
         name="list_trade_offers",
         description="List open cross-chain trade offers (limit enforced).",
         params={"limit": "integer (optional)"},
+        input_schema={
+            "type": "object",
+            "properties": {
+                "limit": {"type": "integer", "minimum": 0, "description": "Optional max items"},
+            },
+            "required": [],
+            "additionalProperties": False,
+        },
         callable=list_trade_offers,
     ),
     "search_qdn": ToolDefinition(
@@ -91,6 +138,16 @@ TOOL_REGISTRY: Dict[str, ToolDefinition] = {
             "address": "string (optional)",
             "service": "integer (optional)",
             "limit": "integer (optional)",
+        },
+        input_schema={
+            "type": "object",
+            "properties": {
+                "address": {"type": "string", "description": "Publisher address"},
+                "service": {"type": "integer", "minimum": 0, "description": "Service code"},
+                "limit": {"type": "integer", "minimum": 0, "description": "Optional max items"},
+            },
+            "required": [],
+            "additionalProperties": False,
         },
         callable=search_qdn,
     ),
@@ -104,6 +161,7 @@ def list_tools() -> List[Dict[str, Any]]:
             "name": tool.name,
             "description": tool.description,
             "params": tool.params,
+            "inputSchema": tool.input_schema,
         }
         for tool in TOOL_REGISTRY.values()
     ]
@@ -126,4 +184,3 @@ async def call_tool(tool_name: str, params: Optional[Dict[str, Any]] = None) -> 
         return {"error": "Invalid parameters."}
     except Exception:
         return {"error": "Unexpected error while calling tool."}
-
