@@ -3,15 +3,16 @@
 from __future__ import annotations
 
 import re
+import unicodedata
 from typing import Optional
 
 # Qortal addresses are Base58, 34 characters, prefixed with "Q".
 ADDRESS_REGEX = re.compile(r"^Q[1-9A-HJ-NP-Za-km-z]{33}$")
 
-# Names: allow alnum, space, dollar, dot, dash, underscore per observed Core acceptance.
 NAME_MIN_LENGTH = 3
 NAME_MAX_LENGTH = 40
-NAME_REGEX = re.compile(r"^[A-Za-z0-9$][A-Za-z0-9$._\\- ]{1,38}[A-Za-z0-9$]$")
+ZERO_WIDTH_CHARS = "\u200b\u200c\u200d\u2060\ufeff"
+ZERO_WIDTH_REGEX = re.compile(f"[{ZERO_WIDTH_CHARS}]")
 
 
 def is_valid_qortal_address(address: Optional[str]) -> bool:
@@ -21,14 +22,24 @@ def is_valid_qortal_address(address: Optional[str]) -> bool:
     return bool(ADDRESS_REGEX.fullmatch(address.strip()))
 
 
+def _normalize_name(value: str) -> str:
+    """Approximate Core's Unicode.normalize: NFKC, remove zero-width, collapse whitespace."""
+    normalized = unicodedata.normalize("NFKC", value)
+    normalized = ZERO_WIDTH_REGEX.sub("", normalized)
+    normalized = re.sub(r"\s+", " ", normalized).strip()
+    return normalized
+
+
 def is_valid_qortal_name(name: Optional[str]) -> bool:
-    """Conservative validation for Qortal names."""
-    if not name:
+    """Validate names similar to Core: length 3-40 bytes and normalized form unchanged."""
+    if not name or not isinstance(name, str):
         return False
-    stripped = name.strip()
-    if not (NAME_MIN_LENGTH <= len(stripped) <= NAME_MAX_LENGTH):
+    normalized = _normalize_name(name)
+    # Reject if normalization changes the input (matches Core's NAME_NOT_NORMALIZED check)
+    if normalized != name:
         return False
-    return bool(NAME_REGEX.fullmatch(stripped))
+    encoded_len = len(name.encode("utf-8"))
+    return NAME_MIN_LENGTH <= encoded_len <= NAME_MAX_LENGTH
 
 
 def clamp_limit(value: Optional[int], *, default: int, max_value: int) -> int:
