@@ -23,9 +23,8 @@ BASE58_REGEX = re.compile(r"^[1-9A-HJ-NP-Za-km-z]+$")
 def _normalize_offer(raw_offer: Dict[str, Any]) -> Dict[str, Any]:
     # The Core response varies by version; prefer the most specific fields and
     # fall back to legacy names to avoid nulls.
-    trade_address = raw_offer.get("tradeAddress") or raw_offer.get("qortalCreatorTradeAddress") or raw_offer.get(
-        "qortalAtAddress"
-    )
+    at_address = raw_offer.get("qortalAtAddress") or raw_offer.get("atAddress")
+    trade_creator_address = raw_offer.get("qortalCreatorTradeAddress")
     creator = raw_offer.get("creator") or raw_offer.get("qortalCreator")
     timestamp = raw_offer.get("timestamp") or raw_offer.get("creationTimestamp")
     foreign_currency = raw_offer.get("foreignCurrency") or raw_offer.get("foreignBlockchain")
@@ -37,8 +36,9 @@ def _normalize_offer(raw_offer: Dict[str, Any]) -> Dict[str, Any]:
     )
 
     return {
-        "tradeAddress": trade_address,
+        "tradeAddress": at_address,
         "creator": creator,
+        "creatorTradeAddress": trade_creator_address,
         "offeringQort": str(raw_offer.get("qortAmount") or raw_offer.get("offeringQort") or "0"),
         "expectedForeign": str(expected_foreign or "0"),
         "foreignCurrency": foreign_currency,
@@ -254,7 +254,7 @@ async def list_completed_trades(
                 # Keep the raw summary structure; normalize only key fields.
                 results.append(
                     {
-                        "tradeAddress": entry.get("qortalAtAddress") or entry.get("tradeAddress"),
+                        "tradeAddress": entry.get("qortalAtAddress") or entry.get("atAddress"),
                         "foreignBlockchain": entry.get("foreignBlockchain"),
                         "tradeTimestamp": entry.get("tradeTimestamp") or entry.get("timestamp"),
                         "qortAmount": entry.get("qortAmount"),
