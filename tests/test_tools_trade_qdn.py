@@ -1,4 +1,5 @@
 import pytest
+import qortal_mcp.tools.names  # used for internal normalization helper
 
 from qortal_mcp.config import QortalConfig
 from qortal_mcp.tools.qdn import search_qdn

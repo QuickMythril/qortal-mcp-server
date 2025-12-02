@@ -722,6 +722,7 @@ TOOL_REGISTRY: Dict[str, ToolDefinition] = {
             "public_key": "string (required, Base58)",
             "limit": "integer (optional)",
             "offset": "integer (optional)",
+            "confirmation_status": "string (required)",
             "reverse": "boolean (optional)",
         },
         input_schema={
@@ -730,9 +731,13 @@ TOOL_REGISTRY: Dict[str, ToolDefinition] = {
                 "public_key": {"type": "string"},
                 "limit": {"type": "integer", "minimum": 0, "maximum": 100},
                 "offset": {"type": "integer", "minimum": 0},
+                "confirmation_status": {
+                    "type": "string",
+                    "enum": ["CONFIRMED", "UNCONFIRMED", "BOTH"],
+                },
                 "reverse": {"type": "boolean"},
             },
-            "required": ["public_key"],
+            "required": ["public_key", "confirmation_status"],
             "additionalProperties": False,
         },
         callable=list_transactions_by_creator,

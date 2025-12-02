@@ -151,6 +151,7 @@ async def test_tx_by_reference_requires_ref():
 @pytest.mark.asyncio
 async def test_txs_by_block_requires_sig():
     assert await list_transactions_by_block("") == {"error": "Signature is required."}
+    assert await list_transactions_by_block("notbase58!") == {"error": "Invalid signature."}
 
 
 @pytest.mark.asyncio
@@ -161,3 +162,16 @@ async def test_txs_by_address_invalid():
 @pytest.mark.asyncio
 async def test_txs_by_creator_invalid_key():
     assert await list_transactions_by_creator("bad") == {"error": "Invalid public key."}
+    assert await list_transactions_by_creator("QgB7zMfujQMLkisp1Lc8PBkVYs75sYB3vV") == {
+        "error": "confirmationStatus is required."
+    }
+
+
+@pytest.mark.asyncio
+async def test_block_at_timestamp_block_unknown():
+    class StubClient:
+        async def fetch_block_at_timestamp(self, ts):
+            raise QortalApiError("block", code="BLOCK_UNKNOWN", status_code=404)
+
+    result = await get_block_at_timestamp(0, client=StubClient())
+    assert result == {"error": "No block at or before timestamp."}

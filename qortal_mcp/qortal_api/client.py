@@ -105,6 +105,8 @@ class QortalApiClient:
             return NameNotFoundError(
                 "Name not found.", code=normalized or None, status_code=status_code
             )
+        if normalized in {"BLOCK_UNKNOWN"}:
+            return QortalApiError("Block not found.", code=normalized or None, status_code=status_code)
         invalid_asset_signals = {"INVALID_ASSET_ID", "601"}
         if normalized in invalid_asset_signals:
             return QortalApiError("Asset not found.", code=normalized or None, status_code=status_code)
@@ -491,6 +493,7 @@ class QortalApiClient:
         *,
         limit: Optional[int] = None,
         offset: Optional[int] = None,
+        confirmation_status: Optional[str] = None,
         reverse: Optional[bool] = None,
     ) -> Any:
         """Fetch transactions by creator public key."""
@@ -500,6 +503,8 @@ class QortalApiClient:
             params["limit"] = limit
         if offset is not None:
             params["offset"] = offset
+        if confirmation_status:
+            params["confirmationStatus"] = confirmation_status
         if reverse is not None:
             params["reverse"] = reverse
         return await self._request(f"/transactions/creator/{encoded}", params=params or None, expect_dict=False)

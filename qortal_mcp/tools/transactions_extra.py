@@ -62,14 +62,18 @@ async def list_transactions_by_block(signature: str, *, client=default_client) -
     normalized = _normalize_sig(signature)
     if not normalized:
         return {"error": "Signature is required."}
+    if not _is_base58(normalized, min_len=43, max_len=200):
+        return {"error": "Invalid signature."}
     try:
         txs = await client.fetch_transactions_by_block(normalized)
+    except QortalApiError as exc:
+        if exc.code in {"BLOCK_UNKNOWN", "INVALID_SIGNATURE"} or exc.status_code == 404:
+            return {"error": "Block not found."}
+        return {"error": "Qortal API error."}
     except UnauthorizedError:
         return {"error": "Unauthorized or API key required."}
     except NodeUnreachableError:
         return {"error": "Node unreachable"}
-    except QortalApiError:
-        return {"error": "Qortal API error."}
     except Exception:
         logger.exception("Unexpected error fetching transactions by block")
         return {"error": "Unexpected error while retrieving transactions."}
@@ -121,11 +125,19 @@ async def list_transactions_by_creator(
     *,
     limit: Optional[int] = None,
     offset: Optional[int] = None,
+    confirmation_status: Optional[str] = None,
     reverse: Optional[bool] = None,
     client=default_client,
 ) -> Dict[str, Any] | list:
     if not public_key or not isinstance(public_key, str) or not _is_base58(public_key, min_len=43, max_len=45):
         return {"error": "Invalid public key."}
+    normalized_status = None
+    if confirmation_status is not None:
+        normalized_status = confirmation_status.strip().upper() if isinstance(confirmation_status, str) else None
+        if normalized_status not in {"CONFIRMED", "UNCONFIRMED", "BOTH"}:
+            return {"error": "Invalid confirmation status."}
+    else:
+        return {"error": "confirmationStatus is required."}
     effective_limit = clamp_limit(limit, default=20, max_value=100)
     effective_offset = clamp_limit(offset, default=0, max_value=100)
     try:
@@ -133,6 +145,7 @@ async def list_transactions_by_creator(
             public_key,
             limit=effective_limit,
             offset=effective_offset,
+            confirmation_status=normalized_status,
             reverse=reverse,
         )
     except UnauthorizedError:

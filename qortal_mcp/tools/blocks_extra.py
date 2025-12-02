@@ -30,12 +30,14 @@ async def get_block_by_signature(signature: str, *, client=default_client) -> Di
         return {"error": "Signature is required."}
     try:
         return await client.fetch_block_by_signature(normalized)
+    except QortalApiError as exc:
+        if exc.code in {"BLOCK_UNKNOWN", "INVALID_SIGNATURE"} or exc.status_code == 404:
+            return {"error": "Block not found."}
+        return {"error": "Qortal API error."}
     except UnauthorizedError:
         return {"error": "Unauthorized or API key required."}
     except NodeUnreachableError:
         return {"error": "Node unreachable"}
-    except QortalApiError:
-        return {"error": "Qortal API error."}
     except Exception:
         logger.exception("Unexpected error fetching block by signature")
         return {"error": "Unexpected error while retrieving block."}
@@ -47,12 +49,14 @@ async def get_block_height_by_signature(signature: str, *, client=default_client
         return {"error": "Signature is required."}
     try:
         height = await client.fetch_block_height_by_signature(normalized)
+    except QortalApiError as exc:
+        if exc.code in {"BLOCK_UNKNOWN", "INVALID_SIGNATURE"} or exc.status_code == 404:
+            return {"error": "Block not found."}
+        return {"error": "Qortal API error."}
     except UnauthorizedError:
         return {"error": "Unauthorized or API key required."}
     except NodeUnreachableError:
         return {"error": "Node unreachable"}
-    except QortalApiError:
-        return {"error": "Qortal API error."}
     except Exception:
         logger.exception("Unexpected error fetching block height by signature")
         return {"error": "Unexpected error while retrieving block height."}
@@ -93,12 +97,14 @@ async def get_minting_info_by_height(height: Any, *, client=default_client) -> D
         return {"error": "Invalid height."}
     try:
         return await client.fetch_minting_info_by_height(parsed)
+    except QortalApiError as exc:
+        if exc.code in {"BLOCK_UNKNOWN"} or exc.status_code == 404:
+            return {"error": "Block not found."}
+        return {"error": "Qortal API error."}
     except UnauthorizedError:
         return {"error": "Unauthorized or API key required."}
     except NodeUnreachableError:
         return {"error": "Node unreachable"}
-    except QortalApiError:
-        return {"error": "Qortal API error."}
     except Exception:
         logger.exception("Unexpected error fetching minting info")
         return {"error": "Unexpected error while retrieving minting info."}

@@ -27,12 +27,14 @@ async def get_block_at_timestamp(timestamp: Any, *, client=default_client) -> Di
         return {"error": "Invalid timestamp."}
     try:
         return await client.fetch_block_at_timestamp(parsed)
+    except QortalApiError as exc:
+        if exc.code in {"BLOCK_UNKNOWN"} or exc.status_code == 404:
+            return {"error": "No block at or before timestamp."}
+        return {"error": "Qortal API error."}
     except UnauthorizedError:
         return {"error": "Unauthorized or API key required."}
     except NodeUnreachableError:
         return {"error": "Node unreachable"}
-    except QortalApiError:
-        return {"error": "Qortal API error."}
     except Exception:
         logger.exception("Unexpected error fetching block at timestamp %s", timestamp)
         return {"error": "Unexpected error while retrieving block by timestamp."}
