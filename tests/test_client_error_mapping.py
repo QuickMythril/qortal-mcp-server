@@ -7,6 +7,7 @@ from qortal_mcp.qortal_api.client import (
     NodeUnreachableError,
     QortalApiClient,
     UnauthorizedError,
+    QortalApiError,
 )
 
 
@@ -73,3 +74,11 @@ async def test_unexpected_response():
     with pytest.raises(Exception):
         await client.fetch_node_status()
 
+
+@pytest.mark.asyncio
+async def test_server_error_maps_to_generic():
+    mock = MockAsyncClient([MockResponse(500, {"error": "INTERNAL_ERROR"})])
+    client = QortalApiClient(async_client=mock)
+    with pytest.raises(QortalApiError) as excinfo:
+        await client.fetch_node_status()
+    assert excinfo.value.status_code == 500
