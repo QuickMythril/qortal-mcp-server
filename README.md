@@ -192,9 +192,10 @@ Tool calls (post-initialize):
 {"jsonrpc": "2.0", "id": 3, "method": "tools/call", "params": {"name": "validate_address", "arguments": {"address": "Q..."}}}
 ```
 
-Tool responses include a `content` array (e.g. `{ "result": { "content": [ { "type": "object", "object": { ...tool result... } } ] } }`).
-Protocol-level failures use the JSON-RPC `error` field; tool-level validation
-errors stay inside the returned object (e.g. `{ "error": "Invalid Qortal address." }`).
+Tool responses include a `content` array with a `text` item plus a
+`structuredContent` copy of the JSON result. Tool execution errors set
+`isError: true` and return the message as text content. Protocol-level failures
+use the JSON-RPC `error` field.
 
 Manifest: `mcp-manifest.json` points at `http://localhost:8000/mcp` with name
 `qortal-mcp-server` and version `0.1.0`. Update the endpoint for remote usage.
@@ -204,7 +205,7 @@ Manifest: `mcp-manifest.json` points at `http://localhost:8000/mcp` with name
 - A simple per-tool rate limiter (token bucket) defaults to ~5 requests/second
   per tool to protect the underlying Qortal node. Adjust via `QortalConfig.rate_limit_qps`.
 - Logging is minimal and avoids secrets. Adjust log level via `QORTAL_MCP_LOG_LEVEL`.
-- Responses include an `X-Request-ID` header; the MCP gateway also returns `requestId` in JSON-RPC responses.
+- Responses include an `X-Request-ID` header for tracing.
 - Log format can be switched to JSON with `QORTAL_MCP_LOG_FORMAT=json`. Per-tool
   rate limits can be set in code via `per_tool_rate_limits` if desired.
 - `/metrics` returns in-process counters (requests, rate-limited counts, per-tool successes/errors); for multi-worker setups, aggregate externally.

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 import logging
 import time
 import uuid
@@ -378,30 +379,36 @@ async def mcp_gateway(request: Request) -> JSONResponse:
 
 
 def _jsonrpc_success_payload(rpc_id: Any, result: Any, request_id: Optional[str] = None) -> Dict[str, Any]:
-    payload: Dict[str, Any] = {"jsonrpc": "2.0", "id": rpc_id, "result": result}
-    if request_id is not None:
-        payload["requestId"] = request_id
-    return payload
+    return {"jsonrpc": "2.0", "id": rpc_id, "result": result}
 
 
 def _jsonrpc_error_payload(rpc_id: Any, code: int, message: str, request_id: Optional[str] = None) -> Dict[str, Any]:
-    payload: Dict[str, Any] = {"jsonrpc": "2.0", "id": rpc_id, "error": {"code": code, "message": message}}
-    if request_id is not None:
-        payload["requestId"] = request_id
-    return payload
+    return {"jsonrpc": "2.0", "id": rpc_id, "error": {"code": code, "message": message}}
 
 
 def _wrap_tool_result(result: Any) -> Dict[str, Any]:
     """
     Shape tool outputs into MCP-friendly content array.
     """
-    # If the tool already returned an error dict, pass it through as object content.
-    content_item: Dict[str, Any]
+    # Tool-level errors are returned in-band with isError flag.
+    if isinstance(result, dict) and "error" in result:
+        message = result.get("error") or "Error"
+        wrapped = {"content": [{"type": "text", "text": str(message)}], "isError": True}
+        # Preserve structured error details for capable clients.
+        wrapped["structuredContent"] = result
+        return wrapped
+
+    # Plain string results are returned directly as text.
     if isinstance(result, str):
-        content_item = {"type": "text", "text": result}
-    elif isinstance(result, list):
-        # MCP clients expect "object" to be a map, so wrap lists in an object container.
-        content_item = {"type": "object", "object": {"items": result}}
-    else:
-        content_item = {"type": "object", "object": result}
-    return {"content": [content_item]}
+        return {"content": [{"type": "text", "text": result}]}
+
+    # For structured or primitive outputs, provide a text rendering plus structuredContent.
+    try:
+        text_repr = json.dumps(result, ensure_ascii=True)
+    except Exception:
+        text_repr = str(result)
+    wrapped_result: Dict[str, Any] = {
+        "content": [{"type": "text", "text": text_repr}],
+        "structuredContent": result,
+    }
+    return wrapped_result

@@ -1,3 +1,5 @@
+import json
+
 from fastapi.testclient import TestClient
 
 from qortal_mcp.config import default_config
@@ -36,8 +38,10 @@ def test_mcp_call_tool_validate_address():
     data = resp.json()
     assert data["id"] == 2
     content = data["result"]["content"][0]
-    assert content["type"] == "object"
-    assert content["object"] == {"isValid": False}
+    assert content["type"] == "text"
+    parsed = json.loads(content["text"])
+    assert parsed == {"isValid": False}
+    assert data["result"]["structuredContent"] == {"isValid": False}
 
 
 def test_mcp_initialize():
@@ -90,8 +94,10 @@ def test_mcp_tools_call_alias():
     data = resp.json()
     assert data["id"] == 4
     content = data["result"]["content"][0]
-    assert content["type"] == "object"
-    assert content["object"] == {"isValid": False}
+    assert content["type"] == "text"
+    parsed = json.loads(content["text"])
+    assert parsed == {"isValid": False}
+    assert data["result"]["structuredContent"] == {"isValid": False}
 
 
 def test_mcp_unknown_method_returns_error():
@@ -164,6 +170,27 @@ def test_mcp_tool_schemas_include_patterns_and_limits():
     assert name_props["limit"]["maximum"] == default_config.max_names
 
 
+def test_mcp_tool_error_sets_is_error():
+    client = TestClient(app)
+    resp = client.post(
+        "/mcp",
+        json={
+            "jsonrpc": "2.0",
+            "id": 16,
+            "method": "call_tool",
+            "params": {"tool": "get_balance", "params": {"address": "invalid"}},
+        },
+    )
+    assert resp.status_code == 200
+    data = resp.json()
+    assert data["id"] == 16
+    result = data["result"]
+    assert result.get("isError") is True
+    content = result["content"][0]
+    assert content["type"] == "text"
+    assert "Invalid Qortal address" in content["text"]
+
+
 def test_mcp_wraps_list_results_into_object_container(monkeypatch):
     async def fake_call_tool(name, params=None):
         return [{"foo": "bar"}, {"baz": "qux"}]
@@ -183,5 +210,7 @@ def test_mcp_wraps_list_results_into_object_container(monkeypatch):
     assert resp.status_code == 200
     data = resp.json()
     content = data["result"]["content"][0]
-    assert content["type"] == "object"
-    assert content["object"]["items"] == [{"foo": "bar"}, {"baz": "qux"}]
+    assert content["type"] == "text"
+    parsed = json.loads(content["text"])
+    assert parsed == [{"foo": "bar"}, {"baz": "qux"}]
+    assert data["result"]["structuredContent"] == [{"foo": "bar"}, {"baz": "qux"}]

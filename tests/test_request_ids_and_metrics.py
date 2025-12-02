@@ -17,7 +17,7 @@ def test_request_ids_on_routes_and_mcp():
     rpc = client.post("/mcp", json={"jsonrpc": "2.0", "id": 99, "method": "list_tools"})
     assert rpc.status_code == 200
     body = rpc.json()
-    assert body.get("requestId")
+    assert "requestId" not in body
     assert body.get("id") == 99
 
 
@@ -64,4 +64,3 @@ async def test_api_key_header_is_sent(monkeypatch):
     client = QortalApiClient(config=cfg.default_config, async_client=HeaderCaptureClient())
     await client.fetch_node_status()
     assert sent_headers.get("X-API-KEY") == "secret-key"
-

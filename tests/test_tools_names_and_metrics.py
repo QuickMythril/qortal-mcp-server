@@ -66,8 +66,11 @@ def test_mcp_unknown_tool_returns_error():
     )
     assert resp.status_code == 200
     data = resp.json()
-    content = data["result"]["content"][0]
-    assert content["object"]["error"]
+    result = data["result"]
+    assert result.get("isError") is True
+    content = result["content"][0]
+    assert content["type"] == "text"
+    assert "Unknown tool" in content["text"]
 
 
 def test_json_log_mode_initialization(monkeypatch):

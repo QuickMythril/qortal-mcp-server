@@ -411,12 +411,12 @@ Responsibilities: fileciteturn0file0
 - `server.py` – FastAPI app exposing each tool as an HTTP endpoint and/or
   MCP/JSON‑RPC method, depending on integration. Also provides `/health`,
   `/metrics`, and a minimal MCP gateway (see `mcp-manifest.json`) with
-  per-request IDs in responses.
+  per-request IDs in logs/headers.
 
 ### 4.5 Observability
 
-- Request IDs are generated per call and returned via `X-Request-ID` (HTTP) and
-  `requestId` (MCP JSON-RPC).
+- Request IDs are generated per call and returned via `X-Request-ID` headers
+  for traceability.
 - `/metrics` exposes in-process counters (requests, rate-limited hits, per-tool
   successes/errors, recent durations). These are per-process; aggregate
   externally in multi-worker deployments.
@@ -430,12 +430,13 @@ Responsibilities: fileciteturn0file0
   matching MCP spec version `2025-03-26`.
 - Tool methods: accepts both `tools/list` and `list_tools` for listing, and
   `tools/call` or `call_tool` for invocation (`name`/`tool` + `arguments`/`params`).
-- Responses to tool calls are wrapped in a MCP `content` array with an
-  `object` item holding the tool result (errors included) for easy consumption
-  by MCP clients.
+- Tool call responses include a `content` array with a `text` item containing a
+  JSON string plus a `structuredContent` field carrying the parsed result. Tool
+  execution errors set `isError=true` and return the message as text content
+  (protocol-level errors still use top-level JSON-RPC `error` objects).
 - Protocol-level errors (unknown method, invalid params, parse errors) use
-  top-level JSON-RPC `error` objects; tool-level validation stays in
-  `result.error` for LLM simplicity.
+  top-level JSON-RPC `error` objects; tool-level validation stays in-band via
+  the result (text content + optional structured payload).
 
 ### 4.3 Error handling
 
