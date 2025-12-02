@@ -159,6 +159,12 @@ To register with an MCP-capable client (e.g., ChatGPT/Codex IDE):
 1. Ensure the server is running and reachable (default `http://localhost:8000`).
 2. Point the client to `mcp-manifest.json` (update the endpoint if not using localhost).
 3. The client can call `list_tools` then `call_tool` with `tool` and `params`.
+
+## Notes on rate limits and logging
+
+- A simple per-tool rate limiter (token bucket) defaults to ~5 requests/second
+  per tool to protect the underlying Qortal node. Adjust via `QortalConfig.rate_limit_qps`.
+- Logging is minimal and avoids secrets. Add your own handlers/formatters as needed.
 ```
 
 Once running, the server can be wired into your LLM tooling as an MCP server or
