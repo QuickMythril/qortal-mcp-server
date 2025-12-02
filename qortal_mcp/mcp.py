@@ -261,7 +261,6 @@ TOOL_REGISTRY: Dict[str, ToolDefinition] = {
         name="list_names_for_sale",
         description="List names currently for sale.",
         params={
-            "address": "string (optional; not supported as filter)",
             "limit": "integer (optional)",
             "offset": "integer (optional)",
             "reverse": "boolean (optional)",
@@ -269,13 +268,6 @@ TOOL_REGISTRY: Dict[str, ToolDefinition] = {
         input_schema={
             "type": "object",
             "properties": {
-                "address": {
-                    "type": "string",
-                    "description": "Filtering by address is not supported; will return an error if provided.",
-                    "pattern": ADDRESS_PATTERN,
-                    "minLength": 34,
-                    "maxLength": 34,
-                },
                 "limit": _limit_schema(default_config.max_names),
                 "offset": {"type": "integer", "minimum": 0},
                 "reverse": {"type": "boolean"},

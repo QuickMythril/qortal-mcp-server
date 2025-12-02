@@ -248,13 +248,10 @@ async def list_names_for_sale(
     limit: Optional[int] = None,
     offset: Optional[int] = None,
     reverse: Optional[bool] = None,
-    address: Optional[str] = None,
     client=default_client,
     config: QortalConfig = default_config,
 ) -> List[Dict[str, Any]] | Dict[str, str]:
     """List names currently for sale."""
-    if address:
-        return {"error": "Filtering by address is not supported for names for sale."}
     effective_limit = clamp_limit(limit, default=config.max_names, max_value=config.max_names)
     try:
         raw = await client.fetch_names_for_sale(limit=effective_limit, offset=offset, reverse=reverse)
