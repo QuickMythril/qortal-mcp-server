@@ -135,4 +135,7 @@ async def get_node_uptime(client=default_client) -> Dict[str, Any]:
     except Exception:
         logger.exception("Unexpected error fetching node uptime")
         return {"error": "Unexpected error while retrieving node uptime."}
+    # /admin/uptime can return a bare number; wrap it in an object.
+    if isinstance(uptime_info, (int, float)):
+        return {"uptime": uptime_info}
     return uptime_info

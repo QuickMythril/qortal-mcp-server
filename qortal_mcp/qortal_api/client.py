@@ -179,7 +179,7 @@ class QortalApiClient:
 
     async def fetch_node_uptime(self) -> Dict[str, Any]:
         """Retrieve node uptime (if available)."""
-        return await self._request("/admin/uptime", use_api_key=True)
+        return await self._request("/admin/uptime", use_api_key=True, expect_dict=False)
 
     async def fetch_address_info(self, address: str) -> Dict[str, Any]:
         """Retrieve base account information for an address."""

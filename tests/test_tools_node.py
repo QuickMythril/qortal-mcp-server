@@ -99,6 +99,16 @@ async def test_get_node_uptime_error_mapping():
 
 
 @pytest.mark.asyncio
+async def test_get_node_uptime_numeric_wrapping():
+    class StubClient:
+        async def fetch_node_uptime(self):
+            return 456
+
+    result = await get_node_uptime(client=StubClient())
+    assert result == {"uptime": 456}
+
+
+@pytest.mark.asyncio
 async def test_get_node_info_error_mapping():
     class StubClient:
         async def fetch_node_info(self):
