@@ -93,6 +93,10 @@ async def get_node_info(client=default_client) -> Dict[str, Any]:
         "buildVersion": raw_info.get("buildVersion") or raw_info.get("version"),
         "buildTimestamp": _to_int(raw_info.get("buildTimestamp")),
         "uptime": _to_int(raw_info.get("uptime")),
-        "currentTime": _to_int(raw_info.get("currentTime") or raw_info.get("now")),
+        "currentTime": _to_int(
+            raw_info.get("currentTime")
+            or raw_info.get("now")
+            or raw_info.get("currentTimestamp")
+        ),
         "nodeId": raw_info.get("nodeId"),
     }

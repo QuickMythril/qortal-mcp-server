@@ -115,6 +115,10 @@ uvicorn qortal_mcp.server:app --reload
 # (Optional) Quick sanity check against your local Core node
 # Override QORTAL_SAMPLE_ADDRESS to another on-chain address if desired.
 python scripts/sanity_check.py
+
+# (Optional) Run unit tests
+pip install -r requirements-dev.txt
+pytest
 ```
 
 Once running, the server can be wired into your LLM tooling as an MCP server or
