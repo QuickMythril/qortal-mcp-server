@@ -27,7 +27,22 @@ from .blocks import (
     list_block_summaries,
     list_block_range,
 )
+from .blocks_extra import (
+    get_block_by_signature,
+    get_block_height_by_signature,
+    get_first_block,
+    get_last_block,
+    get_minting_info_by_height,
+    list_block_signers,
+)
 from .transactions import search_transactions
+from .transactions_extra import (
+    get_transaction_by_signature,
+    get_transaction_by_reference,
+    list_transactions_by_block,
+    list_transactions_by_address,
+    list_transactions_by_creator,
+)
 from . import validators
 
 __all__ = [
@@ -59,6 +74,17 @@ __all__ = [
     "get_block_by_height",
     "list_block_summaries",
     "list_block_range",
+    "get_block_by_signature",
+    "get_block_height_by_signature",
+    "get_first_block",
+    "get_last_block",
+    "get_minting_info_by_height",
+    "list_block_signers",
     "search_transactions",
+    "get_transaction_by_signature",
+    "get_transaction_by_reference",
+    "list_transactions_by_block",
+    "list_transactions_by_address",
+    "list_transactions_by_creator",
     "validators",
 ]

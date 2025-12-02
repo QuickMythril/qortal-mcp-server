@@ -37,6 +37,17 @@
     "get_block_by_height",
     "list_block_summaries",
     "list_block_range",
-    "search_transactions"
+    "search_transactions",
+    "get_block_by_signature",
+    "get_block_height_by_signature",
+    "get_first_block",
+    "get_last_block",
+    "get_minting_info_by_height",
+    "list_block_signers",
+    "get_transaction_by_signature",
+    "get_transaction_by_reference",
+    "list_transactions_by_block",
+    "list_transactions_by_address",
+    "list_transactions_by_creator"
   ]
 }

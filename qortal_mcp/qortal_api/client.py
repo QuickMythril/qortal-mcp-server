@@ -422,6 +422,88 @@ class QortalApiClient:
             params["reverse"] = reverse
         return await self._request("/transactions/search", params=params, expect_dict=False)
 
+    async def fetch_block_by_signature(self, signature: str) -> Any:
+        """Fetch block by signature."""
+        encoded = quote(signature, safe="")
+        return await self._request(f"/blocks/signature/{encoded}")
+
+    async def fetch_block_height_by_signature(self, signature: str) -> Any:
+        """Fetch block height from signature."""
+        encoded = quote(signature, safe="")
+        return await self._request(f"/blocks/height/{encoded}", expect_dict=False)
+
+    async def fetch_first_block(self) -> Any:
+        """Fetch first block."""
+        return await self._request("/blocks/first")
+
+    async def fetch_last_block(self) -> Any:
+        """Fetch last block."""
+        return await self._request("/blocks/last")
+
+    async def fetch_minting_info_by_height(self, height: int) -> Any:
+        """Fetch minting info for block height."""
+        return await self._request(f"/blocks/byheight/{height}/mintinginfo")
+
+    async def fetch_block_signers(self) -> Any:
+        """Fetch list of block signers."""
+        return await self._request("/blocks/signers", expect_dict=False)
+
+    async def fetch_transaction_by_signature(self, signature: str) -> Any:
+        """Fetch transaction by signature."""
+        encoded = quote(signature, safe="")
+        return await self._request(f"/transactions/signature/{encoded}")
+
+    async def fetch_transaction_by_reference(self, reference: str) -> Any:
+        """Fetch transaction by reference."""
+        encoded = quote(reference, safe="")
+        return await self._request(f"/transactions/reference/{encoded}")
+
+    async def fetch_transactions_by_block(self, signature: str) -> Any:
+        """Fetch transactions for a block signature."""
+        encoded = quote(signature, safe="")
+        return await self._request(f"/transactions/block/{encoded}", expect_dict=False)
+
+    async def fetch_transactions_by_address(
+        self,
+        address: str,
+        *,
+        limit: Optional[int] = None,
+        offset: Optional[int] = None,
+        confirmation_status: Optional[str] = None,
+        reverse: Optional[bool] = None,
+    ) -> Any:
+        """Fetch transactions involving an address."""
+        encoded = quote(address, safe="")
+        params: Dict[str, Any] = {}
+        if limit is not None:
+            params["limit"] = limit
+        if offset is not None:
+            params["offset"] = offset
+        if confirmation_status:
+            params["confirmationStatus"] = confirmation_status
+        if reverse is not None:
+            params["reverse"] = reverse
+        return await self._request(f"/transactions/address/{encoded}", params=params or None, expect_dict=False)
+
+    async def fetch_transactions_by_creator(
+        self,
+        public_key: str,
+        *,
+        limit: Optional[int] = None,
+        offset: Optional[int] = None,
+        reverse: Optional[bool] = None,
+    ) -> Any:
+        """Fetch transactions by creator public key."""
+        encoded = quote(public_key, safe="")
+        params: Dict[str, Any] = {}
+        if limit is not None:
+            params["limit"] = limit
+        if offset is not None:
+            params["offset"] = offset
+        if reverse is not None:
+            params["reverse"] = reverse
+        return await self._request(f"/transactions/creator/{encoded}", params=params or None, expect_dict=False)
+
     async def fetch_assets(
         self,
         *,

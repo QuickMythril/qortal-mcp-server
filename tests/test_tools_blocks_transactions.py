@@ -8,7 +8,22 @@ from qortal_mcp.tools.blocks import (
     list_block_summaries,
     list_block_range,
 )
+from qortal_mcp.tools.blocks_extra import (
+    get_block_by_signature,
+    get_block_height_by_signature,
+    get_first_block,
+    get_last_block,
+    get_minting_info_by_height,
+    list_block_signers,
+)
 from qortal_mcp.tools.transactions import search_transactions
+from qortal_mcp.tools.transactions_extra import (
+    get_transaction_by_signature,
+    get_transaction_by_reference,
+    list_transactions_by_block,
+    list_transactions_by_address,
+    list_transactions_by_creator,
+)
 from qortal_mcp.qortal_api import NodeUnreachableError, QortalApiError, UnauthorizedError, InvalidAddressError
 
 
@@ -88,3 +103,61 @@ async def test_search_transactions_success():
     result = await search_transactions(tx_types=["PAYMENT"], client=StubClient())
     assert isinstance(result, list)
     assert result[0]["signature"] == "s"
+
+
+@pytest.mark.asyncio
+async def test_block_by_signature_requires_sig():
+    assert await get_block_by_signature("") == {"error": "Signature is required."}
+
+
+@pytest.mark.asyncio
+async def test_block_height_by_signature_requires_sig():
+    assert await get_block_height_by_signature("") == {"error": "Signature is required."}
+
+
+@pytest.mark.asyncio
+async def test_first_last_block_errors():
+    class StubClient:
+        async def fetch_first_block(self):
+            raise NodeUnreachableError("down")
+
+    assert await get_first_block(client=StubClient()) == {"error": "Node unreachable"}
+
+
+@pytest.mark.asyncio
+async def test_minting_info_invalid_height():
+    assert await get_minting_info_by_height("bad") == {"error": "Invalid height."}
+
+
+@pytest.mark.asyncio
+async def test_block_signers_unexpected_response():
+    class StubClient:
+        async def fetch_block_signers(self):
+            return {"not": "list"}
+
+    assert await list_block_signers(client=StubClient()) == {"error": "Unexpected response from node."}
+
+
+@pytest.mark.asyncio
+async def test_tx_by_signature_requires_sig():
+    assert await get_transaction_by_signature("") == {"error": "Signature is required."}
+
+
+@pytest.mark.asyncio
+async def test_tx_by_reference_requires_ref():
+    assert await get_transaction_by_reference("") == {"error": "Reference is required."}
+
+
+@pytest.mark.asyncio
+async def test_txs_by_block_requires_sig():
+    assert await list_transactions_by_block("") == {"error": "Signature is required."}
+
+
+@pytest.mark.asyncio
+async def test_txs_by_address_invalid():
+    assert await list_transactions_by_address("bad") == {"error": "Invalid Qortal address."}
+
+
+@pytest.mark.asyncio
+async def test_txs_by_creator_invalid_key():
+    assert await list_transactions_by_creator("bad") == {"error": "Invalid public key."}
