@@ -109,9 +109,10 @@ async def get_names_by_address(
         return {"error": "Invalid Qortal address."}
 
     effective_limit = clamp_limit(limit, default=config.max_names, max_value=config.max_names)
+    effective_offset = clamp_limit(offset, default=0, max_value=config.max_names)
 
     try:
-        raw_names = await client.fetch_names_by_owner(address, limit=effective_limit, offset=offset, reverse=reverse)
+        raw_names = await client.fetch_names_by_owner(address, limit=effective_limit, offset=effective_offset, reverse=reverse)
     except InvalidAddressError:
         return {"error": "Invalid Qortal address."}
     except AddressNotFoundError:
@@ -185,8 +186,9 @@ async def search_names(
     if not query or not isinstance(query, str):
         return {"error": "Query is required."}
     effective_limit = clamp_limit(limit, default=config.max_names, max_value=config.max_names)
+    effective_offset = clamp_limit(offset, default=0, max_value=config.max_names)
     try:
-        raw = await client.search_names(query, prefix=prefix, limit=effective_limit, offset=offset, reverse=reverse)
+        raw = await client.search_names(query, prefix=prefix, limit=effective_limit, offset=effective_offset, reverse=reverse)
     except UnauthorizedError:
         return {"error": "Unauthorized or API key required."}
     except NodeUnreachableError:
@@ -217,13 +219,14 @@ async def list_names(
 ) -> List[Dict[str, Any]] | Dict[str, str]:
     """List registered names (alphabetical)."""
     effective_limit = clamp_limit(limit, default=config.max_names, max_value=config.max_names)
+    effective_offset = clamp_limit(offset, default=0, max_value=config.max_names)
     if after is not None:
         try:
             after = int(after)
         except (TypeError, ValueError):
             return {"error": "Invalid 'after' timestamp."}
     try:
-        raw = await client.fetch_all_names(after=after, limit=effective_limit, offset=offset, reverse=reverse)
+        raw = await client.fetch_all_names(after=after, limit=effective_limit, offset=effective_offset, reverse=reverse)
     except UnauthorizedError:
         return {"error": "Unauthorized or API key required."}
     except NodeUnreachableError:
@@ -253,8 +256,9 @@ async def list_names_for_sale(
 ) -> List[Dict[str, Any]] | Dict[str, str]:
     """List names currently for sale."""
     effective_limit = clamp_limit(limit, default=config.max_names, max_value=config.max_names)
+    effective_offset = clamp_limit(offset, default=0, max_value=config.max_names)
     try:
-        raw = await client.fetch_names_for_sale(limit=effective_limit, offset=offset, reverse=reverse)
+        raw = await client.fetch_names_for_sale(limit=effective_limit, offset=effective_offset, reverse=reverse)
     except UnauthorizedError:
         return {"error": "Unauthorized or API key required."}
     except NodeUnreachableError:

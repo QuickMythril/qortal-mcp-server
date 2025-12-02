@@ -60,6 +60,7 @@ limits and validation: fileciteturn0file0
 - `/crosschain/tradeoffers`
 - `/arbitrary/search`
 - A small subset of `/assets/*` read‑only endpoints (DEX views – deferred)
+- `/assets` (list), `/assets/info`, `/assets/balances` (read‑only, with limits)
 
 No POST/PUT/DELETE operations are ever used. No endpoints that require
 transaction payloads or private keys are exposed. fileciteturn0file0

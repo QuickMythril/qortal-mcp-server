@@ -252,16 +252,95 @@ class QortalApiClient:
             params["reverse"] = reverse
         return await self._request("/names/forsale", params=params or None, expect_dict=False)
 
-    async def fetch_trade_offers(self, *, limit: int) -> Any:
+    async def fetch_trade_offers(
+        self,
+        *,
+        limit: int,
+        foreign_blockchain: Optional[str] = None,
+        offset: Optional[int] = None,
+        reverse: Optional[bool] = None,
+    ) -> Any:
         """List open cross-chain trade offers."""
-        return await self._request("/crosschain/tradeoffers", params={"limit": limit}, expect_dict=False)
+        params: Dict[str, Any] = {"limit": limit}
+        if foreign_blockchain:
+            params["foreignBlockchain"] = foreign_blockchain
+        if offset is not None:
+            params["offset"] = offset
+        if reverse is not None:
+            params["reverse"] = reverse
+        return await self._request("/crosschain/tradeoffers", params=params, expect_dict=False)
+
+    async def fetch_assets(
+        self,
+        *,
+        include_data: Optional[bool] = None,
+        limit: Optional[int] = None,
+        offset: Optional[int] = None,
+        reverse: Optional[bool] = None,
+    ) -> Any:
+        """List assets."""
+        params: Dict[str, Any] = {}
+        if include_data is not None:
+            params["includeData"] = include_data
+        if limit is not None:
+            params["limit"] = limit
+        if offset is not None:
+            params["offset"] = offset
+        if reverse is not None:
+            params["reverse"] = reverse
+        return await self._request("/assets", params=params or None, expect_dict=False)
+
+    async def fetch_asset_info(self, *, asset_id: Optional[int] = None, asset_name: Optional[str] = None) -> Any:
+        """Fetch asset info by id or name."""
+        params: Dict[str, Any] = {}
+        if asset_id is not None:
+            params["assetId"] = asset_id
+        if asset_name:
+            params["assetName"] = asset_name
+        return await self._request("/assets/info", params=params or None)
+
+    async def fetch_asset_balances(
+        self,
+        *,
+        addresses: Optional[list[str]] = None,
+        asset_ids: Optional[list[int]] = None,
+        ordering: Optional[str] = None,
+        exclude_zero: Optional[bool] = None,
+        limit: Optional[int] = None,
+        offset: Optional[int] = None,
+        reverse: Optional[bool] = None,
+    ) -> Any:
+        """Fetch asset balances for addresses and/or asset IDs."""
+        params: Dict[str, Any] = {}
+        if addresses:
+            params["address"] = addresses
+        if asset_ids:
+            params["assetid"] = asset_ids
+        if ordering:
+            params["ordering"] = ordering
+        if exclude_zero is not None:
+            params["excludeZero"] = exclude_zero
+        if limit is not None:
+            params["limit"] = limit
+        if offset is not None:
+            params["offset"] = offset
+        if reverse is not None:
+            params["reverse"] = reverse
+        return await self._request("/assets/balances", params=params or None, expect_dict=False)
 
     async def search_qdn(
         self,
         *,
         address: Optional[str] = None,
-        service: Optional[int] = None,
+        service: Optional[str] = None,
         limit: int,
+        confirmation_status: Optional[str] = None,
+        start_block: Optional[int] = None,
+        block_limit: Optional[int] = None,
+        tx_group_id: Optional[int] = None,
+        name: Optional[str] = None,
+        offset: Optional[int] = None,
+        reverse: Optional[bool] = None,
     ) -> Any:
         """Search arbitrary/QDN metadata."""
         params: Dict[str, Any] = {"limit": limit}
@@ -269,6 +348,20 @@ class QortalApiClient:
             params["address"] = address
         if service is not None:
             params["service"] = service
+        if confirmation_status:
+            params["confirmationStatus"] = confirmation_status
+        if start_block is not None:
+            params["startBlock"] = start_block
+        if block_limit is not None:
+            params["blockLimit"] = block_limit
+        if tx_group_id is not None:
+            params["txGroupId"] = tx_group_id
+        if name:
+            params["name"] = name
+        if offset is not None:
+            params["offset"] = offset
+        if reverse is not None:
+            params["reverse"] = reverse
         return await self._request("/arbitrary/search", params=params, expect_dict=False)
 
 

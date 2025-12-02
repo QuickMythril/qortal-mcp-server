@@ -47,6 +47,9 @@ def _normalize_offer(raw_offer: Dict[str, Any]) -> Dict[str, Any]:
 async def list_trade_offers(
     *,
     limit: Optional[int] = None,
+    offset: Optional[int] = None,
+    reverse: Optional[bool] = None,
+    foreign_blockchain: Optional[str] = None,
     client=default_client,
     config: QortalConfig = default_config,
 ) -> List[Dict[str, Any]] | Dict[str, str]:
@@ -58,9 +61,29 @@ async def list_trade_offers(
         default=config.default_trade_offers,
         max_value=config.max_trade_offers,
     )
+    effective_offset = clamp_limit(offset, default=0, max_value=config.max_trade_offers)
+
+    allowed_blockchains = {
+        "BITCOIN",
+        "LITECOIN",
+        "DOGECOIN",
+        "DIGIBYTE",
+        "RAVENCOIN",
+        "PIRATECHAIN",
+    }
+    normalized_foreign: Optional[str] = None
+    if foreign_blockchain:
+        normalized_foreign = foreign_blockchain.strip().upper()
+        if normalized_foreign not in allowed_blockchains:
+            return {"error": "Invalid foreign blockchain."}
 
     try:
-        raw_offers = await client.fetch_trade_offers(limit=effective_limit)
+        raw_offers = await client.fetch_trade_offers(
+            limit=effective_limit,
+            foreign_blockchain=normalized_foreign,
+            offset=effective_offset,
+            reverse=reverse,
+        )
     except UnauthorizedError:
         return {"error": "Unauthorized or API key required."}
     except NodeUnreachableError:

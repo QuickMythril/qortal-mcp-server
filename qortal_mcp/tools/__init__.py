@@ -12,6 +12,7 @@ from .names import (
 )
 from .trade import list_trade_offers
 from .qdn import search_qdn
+from .assets import list_assets, get_asset_info, get_asset_balances
 from . import validators
 
 __all__ = [
@@ -30,5 +31,8 @@ __all__ = [
     "list_names_for_sale",
     "list_trade_offers",
     "search_qdn",
+    "list_assets",
+    "get_asset_info",
+    "get_asset_balances",
     "validators",
 ]

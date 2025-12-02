@@ -114,12 +114,12 @@ async def test_qdn_invalid_address():
 @pytest.mark.asyncio
 async def test_qdn_clamps_limit_and_maps_results():
     class StubClient:
-        async def search_qdn(self, *, address=None, service=None, limit=None):
+        async def search_qdn(self, *, address=None, service=None, limit=None, **kwargs):
             # Return more than the allowed max to verify truncation.
-            return [{"signature": str(i), "publisher": "Q...", "service": 1, "timestamp": i} for i in range(30)]
+            return [{"signature": str(i), "service": "WEBSITE", "timestamp": i} for i in range(30)]
 
     custom_config = QortalConfig(max_qdn_results=5, default_qdn_results=2)
-    results = await search_qdn(address="QgB7zMfujQMLkisp1Lc8PBkVYs75sYB3vV", limit=50, client=StubClient(), config=custom_config)
+    results = await search_qdn(address="QgB7zMfujQMLkisp1Lc8PBkVYs75sYB3vV", limit=50, client=StubClient(), config=custom_config, start_block=1, block_limit=10)
     assert isinstance(results, list)
     assert len(results) == 5
     assert results[0]["signature"] == "0"
@@ -128,35 +128,35 @@ async def test_qdn_clamps_limit_and_maps_results():
 @pytest.mark.asyncio
 async def test_qdn_invalid_service_code():
     result = await search_qdn(service="not-int")
-    assert result == {"error": "Invalid service code."}
+    assert result == {"error": "Invalid service code or name."}
     result = await search_qdn(service=-1)
-    assert result == {"error": "Invalid service code."}
+    assert result == {"error": "Invalid service code or name."}
 
 
 @pytest.mark.asyncio
 async def test_qdn_service_only_ok():
     class StubClient:
-        async def search_qdn(self, *, address=None, service=None, limit=None):
-            return [{"signature": "s", "publisher": "Q", "service": service, "timestamp": 1}]
+        async def search_qdn(self, *, address=None, service=None, limit=None, **kwargs):
+            return [{"signature": "s", "service": service, "timestamp": 1}]
 
-    result = await search_qdn(service=1, client=StubClient())
+    result = await search_qdn(service=1, start_block=1, block_limit=10, client=StubClient())
     assert result and result[0]["service"] == 1
 
 
 @pytest.mark.asyncio
 async def test_qdn_address_and_service_ok():
     class StubClient:
-        async def search_qdn(self, *, address=None, service=None, limit=None):
-            return [{"signature": "s", "publisher": address, "service": service, "timestamp": 1}]
+        async def search_qdn(self, *, address=None, service=None, limit=None, **kwargs):
+            return [{"signature": "s", "service": service, "timestamp": 1}]
 
-    result = await search_qdn(address="QgB7zMfujQMLkisp1Lc8PBkVYs75sYB3vV", service=1, client=StubClient())
-    assert result and result[0]["publisher"].startswith("Q")
+    result = await search_qdn(address="QgB7zMfujQMLkisp1Lc8PBkVYs75sYB3vV", service=1, start_block=1, block_limit=10, client=StubClient())
+    assert result and result[0]["service"] == 1
 
 
 @pytest.mark.asyncio
 async def test_qdn_node_unreachable():
     class StubClient:
-        async def search_qdn(self, *, address=None, service=None, limit=None):
+        async def search_qdn(self, *, address=None, service=None, limit=None, **kwargs):
             raise NodeUnreachableError("down")
 
     result = await search_qdn(address="QgB7zMfujQMLkisp1Lc8PBkVYs75sYB3vV", client=StubClient())
@@ -166,7 +166,7 @@ async def test_qdn_node_unreachable():
 @pytest.mark.asyncio
 async def test_qdn_unexpected_error():
     class StubClient:
-        async def search_qdn(self, *, address=None, service=None, limit=None):
+        async def search_qdn(self, *, address=None, service=None, limit=None, **kwargs):
             raise QortalApiError("boom")
 
     result = await search_qdn(address="QgB7zMfujQMLkisp1Lc8PBkVYs75sYB3vV", client=StubClient())
@@ -176,7 +176,7 @@ async def test_qdn_unexpected_error():
 @pytest.mark.asyncio
 async def test_qdn_unauthorized():
     class StubClient:
-        async def search_qdn(self, *, address=None, service=None, limit=None):
+        async def search_qdn(self, *, address=None, service=None, limit=None, **kwargs):
             raise UnauthorizedError("nope")
 
     result = await search_qdn(address="QgB7zMfujQMLkisp1Lc8PBkVYs75sYB3vV", client=StubClient())
