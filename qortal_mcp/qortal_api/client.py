@@ -126,6 +126,7 @@ class QortalApiClient:
         *,
         params: Optional[Dict[str, Any]] = None,
         use_api_key: bool = False,
+        expect_dict: bool = True,
     ) -> Any:
         client = await self._get_client()
         headers: Dict[str, str] = {}
@@ -159,7 +160,7 @@ class QortalApiClient:
                     message_field = raw_message
             raise self._map_error(error_field, response.status_code, message=message_field)
 
-        if not isinstance(data, dict):
+        if expect_dict and not isinstance(data, dict):
             raise QortalApiError("Unexpected response from node.", status_code=response.status_code)
 
         return data
@@ -181,13 +182,13 @@ class QortalApiClient:
         """Retrieve balance for an address. Defaults to asset 0 (QORT)."""
         encoded = quote(address, safe="")
         return await self._request(
-            f"/addresses/balance/{encoded}", params={"assetId": asset_id}
+            f"/addresses/balance/{encoded}", params={"assetId": asset_id}, expect_dict=False
         )
 
     async def fetch_names_by_owner(self, address: str) -> Any:
         """Retrieve names owned by the given address."""
         encoded = quote(address, safe="")
-        return await self._request(f"/names/address/{encoded}")
+        return await self._request(f"/names/address/{encoded}", expect_dict=False)
 
     async def fetch_name_info(self, name: str) -> Dict[str, Any]:
         """Retrieve details for a specific name."""
@@ -196,7 +197,7 @@ class QortalApiClient:
 
     async def fetch_trade_offers(self, *, limit: int) -> Any:
         """List open cross-chain trade offers."""
-        return await self._request("/crosschain/tradeoffers", params={"limit": limit})
+        return await self._request("/crosschain/tradeoffers", params={"limit": limit}, expect_dict=False)
 
     async def search_qdn(
         self,
@@ -211,7 +212,7 @@ class QortalApiClient:
             params["address"] = address
         if service is not None:
             params["service"] = service
-        return await self._request("/arbitrary/search", params=params)
+        return await self._request("/arbitrary/search", params=params, expect_dict=False)
 
 
 default_client = QortalApiClient()
