@@ -105,6 +105,9 @@ class QortalApiClient:
             return NameNotFoundError(
                 "Name not found.", code=normalized or None, status_code=status_code
             )
+        invalid_asset_signals = {"INVALID_ASSET_ID", "601"}
+        if normalized in invalid_asset_signals:
+            return QortalApiError("Asset not found.", code=normalized or None, status_code=status_code)
         unknown_signals = {"ADDRESS_UNKNOWN", "UNKNOWN_ADDRESS", "124"}
         if normalized in unknown_signals or "unknown address" in lowered_message:
             return AddressNotFoundError(

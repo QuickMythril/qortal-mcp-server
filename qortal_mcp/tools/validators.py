@@ -8,10 +8,10 @@ from typing import Optional
 # Qortal addresses are Base58, 34 characters, prefixed with "Q".
 ADDRESS_REGEX = re.compile(r"^Q[1-9A-HJ-NP-Za-km-z]{33}$")
 
-# Names: use a conservative ASCII whitelist (alnum, dot, dash, underscore) with Qortal limits.
+# Names: allow alnum, space, dollar, dot, dash, underscore per observed Core acceptance.
 NAME_MIN_LENGTH = 3
 NAME_MAX_LENGTH = 40
-NAME_REGEX = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]{1,38}[A-Za-z0-9]$")
+NAME_REGEX = re.compile(r"^[A-Za-z0-9$][A-Za-z0-9$._\\- ]{1,38}[A-Za-z0-9$]$")
 
 
 def is_valid_qortal_address(address: Optional[str]) -> bool:
@@ -42,4 +42,3 @@ def clamp_limit(value: Optional[int], *, default: int, max_value: int) -> int:
     if parsed < 0:
         return default
     return min(parsed, max_value)
-
