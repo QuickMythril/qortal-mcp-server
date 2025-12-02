@@ -2,6 +2,7 @@
   "name": "qortal-mcp-server",
   "version": "0.1.0",
   "description": "Read-only Qortal MCP tool surface over HTTP/JSON-RPC.",
+  "protocolVersion": "2025-03-26",
   "transport": {
     "type": "http",
     "endpoint": "http://localhost:8000/mcp",

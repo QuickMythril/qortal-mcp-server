@@ -90,3 +90,28 @@ def test_mcp_unknown_method_returns_error():
     data = resp.json()
     assert "error" in data
     assert data["error"]["code"] == -32601
+
+
+def test_mcp_invalid_params_type():
+    client = TestClient(app)
+    resp = client.post("/mcp", json={"jsonrpc": "2.0", "id": 11, "method": "call_tool", "params": []})
+    assert resp.status_code == 200
+    data = resp.json()
+    assert data["id"] == 11
+    assert data["error"]["code"] == -32602
+
+
+def test_mcp_parse_error_invalid_json():
+    client = TestClient(app)
+    resp = client.post("/mcp", data="{not json", headers={"Content-Type": "application/json"})
+    assert resp.status_code == 400
+    data = resp.json()
+    assert data["error"]["code"] == -32700
+
+
+def test_mcp_missing_method_invalid_request():
+    client = TestClient(app)
+    resp = client.post("/mcp", json={"jsonrpc": "2.0", "id": 12})
+    assert resp.status_code == 200
+    data = resp.json()
+    assert data["error"]["code"] == -32600

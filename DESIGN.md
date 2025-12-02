@@ -189,16 +189,14 @@ minting metrics, balance, and optionally owned names. fileciteturn0file0�
   "blocksMinted": 0,
   "level": 0,
   "balance": "0.00000000",
-  "assetBalances": [
-    {
-      "assetId": 0,
-      "assetName": "QORT",
-      "balance": "0.00000000"
-    }
-  ],
+  "assetBalances": [],
   "names": ["example-name"]
 }
 ```
+
+Current v1 behavior: `balance` is populated with QORT (asset 0) and
+`assetBalances` is intentionally left empty to avoid large payloads; additional
+asset balances can be added later with strict limits if needed.
 
 **Qortal endpoints**
 
@@ -423,6 +421,18 @@ Responsibilities: fileciteturn0file0
   successes/errors, recent durations). These are per-process; aggregate
   externally in multi-worker deployments.
 - Log level/format are configurable via environment (JSON logging supported).
+
+### 4.6 MCP gateway behavior
+
+- Endpoint: `POST /mcp` using JSON-RPC 2.0 envelopes.
+- Handshake: supports `initialize` (echoes `protocolVersion`, returns
+  `serverInfo` with name/version, and `capabilities.tools.listChanged=false`)
+  matching MCP spec version `2025-03-26`.
+- Tool methods: accepts both `tools/list` and `list_tools` for listing, and
+  `tools/call` or `call_tool` for invocation (`name`/`tool` + `arguments`/`params`).
+- Protocol-level errors (unknown method, invalid params, parse errors) use
+  top-level JSON-RPC `error` objects; tool-level validation stays in
+  `result.error` for LLM simplicity.
 
 ### 4.3 Error handling
 

@@ -151,24 +151,46 @@ curl http://localhost:8000/tools/name_info/AGAPE
 curl "http://localhost:8000/tools/trade_offers?limit=3"
 ```
 
-## MCP / JSON-RPC (experimental)
+## MCP integration (initialize + tools)
 
-An MCP-style gateway is exposed at `POST /mcp` using a minimal JSON-RPC 2.0
-shape:
+The MCP gateway lives at `POST /mcp` and supports the MCP initialize handshake
+plus standard tool methods.
 
-```json
-{"jsonrpc": "2.0", "id": 1, "method": "list_tools"}
-{"jsonrpc": "2.0", "id": 2, "method": "call_tool", "params": {"tool": "validate_address", "params": {"address": "Q..."}}}
+- **Protocol version**: `2025-03-26` (echoed back to the client)
+- **Supported methods**:
+  - `initialize` → returns `protocolVersion`, `serverInfo`, `capabilities.tools`
+  - `tools/list` or `list_tools` → returns the tool catalog
+  - `tools/call` or `call_tool` → call a tool by name
+
+Example `initialize` call for debugging:
+
+```bash
+curl -sS -X POST http://127.0.0.1:8000/mcp \
+  -H "Content-Type: application/json" \
+  -d '{
+    "jsonrpc": "2.0",
+    "id": 1,
+    "method": "initialize",
+    "params": {
+      "protocolVersion": "2025-03-26",
+      "capabilities": {},
+      "clientInfo": {
+        "name": "debug-client",
+        "version": "0.0.1"
+      }
+    }
+  }'
 ```
 
-An example manifest is provided in `mcp-manifest.json` pointing to the default
-endpoint; adjust the URL/port as needed for your deployment.
+Tool calls (post-initialize):
 
-To register with an MCP-capable client (e.g., ChatGPT/Codex IDE):
+```json
+{"jsonrpc": "2.0", "id": 2, "method": "tools/list"}
+{"jsonrpc": "2.0", "id": 3, "method": "tools/call", "params": {"name": "validate_address", "arguments": {"address": "Q..."}}}
+```
 
-1. Ensure the server is running and reachable (default `http://localhost:8000`).
-2. Point the client to `mcp-manifest.json` (update the endpoint if not using localhost).
-3. The client can call `list_tools` then `call_tool` with `tool` and `params`.
+Manifest: `mcp-manifest.json` points at `http://localhost:8000/mcp` with name
+`qortal-mcp-server` and version `0.1.0`. Update the endpoint for remote usage.
 
 ## Notes on rate limits and logging
 
