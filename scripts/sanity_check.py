@@ -12,9 +12,8 @@ if REPO_ROOT not in sys.path:
 
 from qortal_mcp.tools import get_account_overview, get_node_status  # noqa: E402
 
-SAMPLE_ADDRESS = os.getenv(
-    "QORTAL_SAMPLE_ADDRESS", "QZKfNjpXKd3r5asJ5AZtZRnTj5hZ1a8QwM"
-)
+# Default to a known online minter address (public on chain); override via env.
+SAMPLE_ADDRESS = os.getenv("QORTAL_SAMPLE_ADDRESS", "QgB7zMfujQMLkisp1Lc8PBkVYs75sYB3vV")
 
 
 async def main() -> None:

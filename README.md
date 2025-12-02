@@ -103,7 +103,7 @@ cd qortal-mcp-python
 
 # 2. Create a virtualenv and install dependencies
 python -m venv .venv
-source .venv/bin/activate  # Windows: .venv\Scripts\activate
+source .venv/bin/activate  # Windows: .venv\\Scripts\\activate
 pip install -r requirements.txt
 
 # 3. Configure Qortal Core connection (defaults usually OK)
@@ -111,6 +111,10 @@ pip install -r requirements.txt
 
 # 4. Run the server (example – adjust module/path once implemented)
 uvicorn qortal_mcp.server:app --reload
+
+# (Optional) Quick sanity check against your local Core node
+# Override QORTAL_SAMPLE_ADDRESS to another on-chain address if desired.
+python scripts/sanity_check.py
 ```
 
 Once running, the server can be wired into your LLM tooling as an MCP server or
