@@ -28,6 +28,8 @@ async def get_block_by_signature(signature: str, *, client=default_client) -> Di
     normalized = _normalize_sig(signature)
     if not normalized:
         return {"error": "Signature is required."}
+    if not _is_base58(normalized, min_len=43, max_len=200):
+        return {"error": "Invalid signature."}
     try:
         return await client.fetch_block_by_signature(normalized)
     except QortalApiError as exc:
@@ -47,6 +49,8 @@ async def get_block_height_by_signature(signature: str, *, client=default_client
     normalized = _normalize_sig(signature)
     if not normalized:
         return {"error": "Signature is required."}
+    if not _is_base58(normalized, min_len=43, max_len=200):
+        return {"error": "Invalid signature."}
     try:
         height = await client.fetch_block_height_by_signature(normalized)
     except QortalApiError as exc:
@@ -100,6 +104,8 @@ async def get_minting_info_by_height(height: Any, *, client=default_client) -> D
     except QortalApiError as exc:
         if exc.code in {"BLOCK_UNKNOWN"} or exc.status_code == 404:
             return {"error": "Block not found."}
+        if exc.code in {"INVALID_DATA"}:
+            return {"error": "Minting info unavailable for this block."}
         return {"error": "Qortal API error."}
     except UnauthorizedError:
         return {"error": "Unauthorized or API key required."}
@@ -110,14 +116,34 @@ async def get_minting_info_by_height(height: Any, *, client=default_client) -> D
         return {"error": "Unexpected error while retrieving minting info."}
 
 
-async def list_block_signers(*, client=default_client, config=None) -> List[Any] | Dict[str, Any]:
+async def list_block_signers(
+    *,
+    address: Optional[str] = None,
+    limit: Optional[int] = None,
+    offset: Optional[int] = None,
+    reverse: Optional[bool] = None,
+    client=default_client,
+    config=None,
+) -> List[Any] | Dict[str, Any]:
+    effective_limit = clamp_limit(limit, default=50, max_value=500)
+    effective_offset = clamp_limit(offset, default=0, max_value=500)
+    params: Dict[str, Any] = {}
+    if address:
+        params["address"] = address
+    params["limit"] = effective_limit
+    params["offset"] = effective_offset
+    if reverse is not None:
+        params["reverse"] = reverse
     try:
+        # fetch_block_signers currently ignores params; include them when wiring if client adds support
         signers = await client.fetch_block_signers()
     except UnauthorizedError:
         return {"error": "Unauthorized or API key required."}
     except NodeUnreachableError:
         return {"error": "Node unreachable"}
-    except QortalApiError:
+    except QortalApiError as exc:
+        if exc.code in {"BLOCK_UNKNOWN"}:
+            return {"error": "Block not found."}
         return {"error": "Qortal API error."}
     except Exception:
         logger.exception("Unexpected error fetching block signers")

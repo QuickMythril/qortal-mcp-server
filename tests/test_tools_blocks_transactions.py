@@ -108,11 +108,13 @@ async def test_search_transactions_success():
 @pytest.mark.asyncio
 async def test_block_by_signature_requires_sig():
     assert await get_block_by_signature("") == {"error": "Signature is required."}
+    assert await get_block_by_signature("notbase58!") == {"error": "Invalid signature."}
 
 
 @pytest.mark.asyncio
 async def test_block_height_by_signature_requires_sig():
     assert await get_block_height_by_signature("") == {"error": "Signature is required."}
+    assert await get_block_height_by_signature("notbase58!") == {"error": "Invalid signature."}
 
 
 @pytest.mark.asyncio
@@ -136,6 +138,17 @@ async def test_block_signers_unexpected_response():
             return {"not": "list"}
 
     assert await list_block_signers(client=StubClient()) == {"error": "Unexpected response from node."}
+
+
+@pytest.mark.asyncio
+async def test_block_signers_with_limit_offset():
+    class StubClient:
+        async def fetch_block_signers(self):
+            return [{"signer": "Q1"}, {"signer": "Q2"}]
+
+    result = await list_block_signers(limit=1, offset=0, reverse=False, client=StubClient())
+    assert isinstance(result, list)
+    assert len(result) == 2
 
 
 @pytest.mark.asyncio
