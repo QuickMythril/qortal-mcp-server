@@ -185,10 +185,17 @@ class QortalApiClient:
             f"/addresses/balance/{encoded}", params={"assetId": asset_id}, expect_dict=False
         )
 
-    async def fetch_names_by_owner(self, address: str) -> Any:
+    async def fetch_names_by_owner(self, address: str, *, limit: Optional[int] = None, offset: Optional[int] = None, reverse: Optional[bool] = None) -> Any:
         """Retrieve names owned by the given address."""
         encoded = quote(address, safe="")
-        return await self._request(f"/names/address/{encoded}", expect_dict=False)
+        params: Dict[str, Any] = {}
+        if limit is not None:
+            params["limit"] = limit
+        if offset is not None:
+            params["offset"] = offset
+        if reverse is not None:
+            params["reverse"] = reverse
+        return await self._request(f"/names/address/{encoded}", params=params or None, expect_dict=False)
 
     async def fetch_name_info(self, name: str) -> Dict[str, Any]:
         """Retrieve details for a specific name."""

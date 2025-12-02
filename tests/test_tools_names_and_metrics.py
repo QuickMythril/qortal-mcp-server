@@ -89,7 +89,7 @@ async def test_names_by_address_invalid_short_circuit():
 @pytest.mark.asyncio
 async def test_names_by_address_happy_path_with_limit():
     class StubClient:
-        async def fetch_names_by_owner(self, *_args, **_kwargs):
+        async def fetch_names_by_owner(self, address, limit=None, offset=None, reverse=None):
             return {"names": [{"name": "a"}, {"name": "b"}, {"name": "c"}]}
 
     result = await get_names_by_address("QgB7zMfujQMLkisp1Lc8PBkVYs75sYB3vV", limit=2, client=StubClient())

@@ -27,13 +27,13 @@ class CaptureClient:
 
 
 @pytest.mark.asyncio
-async def test_fetch_names_by_owner_path_and_expect_list():
+async def test_fetch_names_by_owner_path_and_params():
     client = QortalApiClient(async_client=CaptureClient(["name1"]))
-    result = await client.fetch_names_by_owner("Q addr")
+    result = await client.fetch_names_by_owner("Q addr", limit=2, offset=1, reverse=True)
     assert result == ["name1"]
     call = client._client.calls[0]
     assert "/names/address/" in call["path"]
-    assert call["params"] is None
+    assert call["params"] == {"limit": 2, "offset": 1, "reverse": True}
 
 
 @pytest.mark.asyncio

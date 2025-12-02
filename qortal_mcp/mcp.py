@@ -164,7 +164,7 @@ TOOL_REGISTRY: Dict[str, ToolDefinition] = {
     "get_names_by_address": ToolDefinition(
         name="get_names_by_address",
         description="List names owned by an address (limit enforced).",
-        params={"address": "string (required)", "limit": "integer (optional)"},
+        params={"address": "string (required)", "limit": "integer (optional)", "offset": "integer (optional)", "reverse": "boolean (optional)"},
         input_schema={
             "type": "object",
             "properties": {
@@ -176,6 +176,15 @@ TOOL_REGISTRY: Dict[str, ToolDefinition] = {
                     "maxLength": 34,
                 },
                 "limit": _limit_schema(default_config.max_names),
+                "offset": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "description": "Offset for pagination (optional)",
+                },
+                "reverse": {
+                    "type": "boolean",
+                    "description": "Reverse sort order (optional)",
+                },
             },
             "required": ["address"],
             "additionalProperties": False,

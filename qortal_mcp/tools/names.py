@@ -70,6 +70,8 @@ async def get_names_by_address(
     address: str,
     *,
     limit: Optional[int] = None,
+    offset: Optional[int] = None,
+    reverse: Optional[bool] = None,
     client=default_client,
     config: QortalConfig = default_config,
 ) -> Dict[str, Any]:
@@ -82,7 +84,7 @@ async def get_names_by_address(
     effective_limit = clamp_limit(limit, default=config.max_names, max_value=config.max_names)
 
     try:
-        raw_names = await client.fetch_names_by_owner(address)
+        raw_names = await client.fetch_names_by_owner(address, limit=effective_limit, offset=offset, reverse=reverse)
     except InvalidAddressError:
         return {"error": "Invalid Qortal address."}
     except AddressNotFoundError:
