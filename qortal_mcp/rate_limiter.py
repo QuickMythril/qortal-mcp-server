@@ -39,9 +39,10 @@ class RateLimiter:
 class PerKeyRateLimiter:
     """Per-key token buckets with a shared configuration."""
 
-    def __init__(self, rate_per_sec: float, burst: float | None = None) -> None:
+    def __init__(self, rate_per_sec: float, burst: float | None = None, per_tool: dict[str, float] | None = None) -> None:
         self.rate = rate_per_sec
         self.burst = burst if burst is not None else rate_per_sec
+        self.per_tool = per_tool or {}
         self._limiters: Dict[str, RateLimiter] = {}
         self._lock = asyncio.Lock()
 
@@ -49,7 +50,7 @@ class PerKeyRateLimiter:
         async with self._lock:
             limiter = self._limiters.get(key)
             if limiter is None:
-                limiter = RateLimiter(self.rate, self.burst)
+                rate = self.per_tool.get(key, self.rate)
+                limiter = RateLimiter(rate, self.burst)
                 self._limiters[key] = limiter
         return await limiter.allow()
-

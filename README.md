@@ -172,6 +172,9 @@ To register with an MCP-capable client (e.g., ChatGPT/Codex IDE):
   per tool to protect the underlying Qortal node. Adjust via `QortalConfig.rate_limit_qps`.
 - Logging is minimal and avoids secrets. Adjust log level via `QORTAL_MCP_LOG_LEVEL`.
 - Responses include an `X-Request-ID` header; the MCP gateway also returns `requestId` in JSON-RPC responses.
+- Log format can be switched to JSON with `QORTAL_MCP_LOG_FORMAT=json`. Per-tool
+  rate limits can be set in code via `per_tool_rate_limits` if desired.
+- `/metrics` returns in-process counters (requests, rate-limited counts, per-tool successes/errors).
 ```
 
 Once running, the server can be wired into your LLM tooling as an MCP server or

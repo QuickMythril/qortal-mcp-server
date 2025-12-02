@@ -9,7 +9,7 @@ from environment or a local file if present.
 from __future__ import annotations
 
 import os
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Optional
 
@@ -43,6 +43,8 @@ DEFAULT_QDN_RESULTS = 10
 MAX_NAME_DATA_PREVIEW = 1000
 DEFAULT_RATE_LIMIT_QPS = 5
 LOG_LEVEL = os.getenv("QORTAL_MCP_LOG_LEVEL", "INFO")
+LOG_FORMAT = os.getenv("QORTAL_MCP_LOG_FORMAT", "json")  # json or plain
+PER_TOOL_RATE_LIMITS: dict[str, float] = {}
 
 
 def load_api_key() -> Optional[str]:
@@ -81,6 +83,8 @@ class QortalConfig:
     max_name_data_preview: int = MAX_NAME_DATA_PREVIEW
     rate_limit_qps: float = DEFAULT_RATE_LIMIT_QPS
     log_level: str = LOG_LEVEL
+    log_format: str = LOG_FORMAT
+    per_tool_rate_limits: dict[str, float] = field(default_factory=dict)
 
 
 default_config = QortalConfig()

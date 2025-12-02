@@ -28,8 +28,33 @@ from qortal_mcp.tools import (
 )
 
 logger = logging.getLogger(__name__)
-logging.basicConfig(level=getattr(logging, default_config.log_level.upper(), logging.INFO))
-rate_limiter = PerKeyRateLimiter(rate_per_sec=default_config.rate_limit_qps)
+if default_config.log_format.lower() == "json":
+    try:
+        import json
+
+        class JsonFormatter(logging.Formatter):
+            def format(self, record: logging.LogRecord) -> str:
+                payload = {
+                    "level": record.levelname,
+                    "message": record.getMessage(),
+                    "name": record.name,
+                }
+                for key in ("tool", "request_id", "error"):
+                    if hasattr(record, key):
+                        payload[key] = getattr(record, key)
+                return json.dumps(payload)
+
+        handler = logging.StreamHandler()
+        handler.setFormatter(JsonFormatter())
+        logging.basicConfig(level=getattr(logging, default_config.log_level.upper(), logging.INFO), handlers=[handler])
+    except Exception:
+        logging.basicConfig(level=getattr(logging, default_config.log_level.upper(), logging.INFO))
+else:
+    logging.basicConfig(level=getattr(logging, default_config.log_level.upper(), logging.INFO))
+rate_limiter = PerKeyRateLimiter(
+    rate_per_sec=default_config.rate_limit_qps,
+    per_tool=default_config.per_tool_rate_limits,
+)
 HEALTH_STATUS = {"status": "ok"}
 
 
@@ -66,10 +91,16 @@ def _log_tool_result(tool_name: str, result: Dict[str, Any], request_id: Optiona
             tool_name,
             result.get("error"),
             request_id,
+            extra={"tool": tool_name, "request_id": request_id, "error": result.get("error")},
         )
         default_metrics.record_tool(tool_name, success=False)
     else:
-        logger.info("tool=%s outcome=success request_id=%s", tool_name, request_id)
+        logger.info(
+            "tool=%s outcome=success request_id=%s",
+            tool_name,
+            request_id,
+            extra={"tool": tool_name, "request_id": request_id},
+        )
         default_metrics.record_tool(tool_name, success=True)
 
 
