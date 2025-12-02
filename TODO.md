@@ -18,3 +18,10 @@ This list merges the gaps I found and the other CLI agent’s findings. Use it a
 - Add block/time mapping tools: `/blocks/timestamp/{timestamp}`, `/blocks/height`, `/blocks/byheight/{height}`, `/blocks/summaries`, `/blocks/range/{height}` with chunked limits.
 - Add transaction search tool wrapping `/transactions/search` with Core constraints (txType or address or limit<=20; block ranges only with CONFIRMED); clamp limits.
 - Update MCP manifest/registry and config limits for block summary/range paging; add tests for validation.
+
+## Block/transaction fixes (in progress)
+- `get_block_at_timestamp`: core returns errors at/just before genesis (e.g., 1593450000000). Add clearer error mapping for timestamps before first block (e.g., “No block at or before timestamp.”) or clamp to genesis min timestamp.
+- `list_block_signers`: currently returns “Node unreachable”; verify client path/response handling (`/blocks/signers`, expect list) and fix wiring.
+- `get_minting_info_by_height`: returns “Node unreachable”; verify path (`/blocks/byheight/{height}/mintinginfo`) and response type; map missing height to clear error.
+- `list_transactions_by_creator`: Core requires `confirmationStatus`; tool currently omits it, causing “Invalid parameters.” Add required confirmation_status, validate Base58 public key, and clamp limits.
+- `list_transactions_by_block`: inconsistent “Qortal API error” for some block signatures; add Base58/length validation, ensure client uses `expect_dict=False`, map BLOCK_UNKNOWN/INVALID_SIGNATURE to clear errors.

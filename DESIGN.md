@@ -380,8 +380,7 @@ At least one of `address` or `service` must be provided.
 [
   {
     "signature": "…",
-    "publisher": "Q...",
-    "service": 1,
+    "service": 120,
     "timestamp": 0
   }
 ]
