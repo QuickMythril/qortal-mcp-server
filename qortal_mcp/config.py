@@ -42,6 +42,7 @@ MAX_QDN_RESULTS = 20
 DEFAULT_QDN_RESULTS = 10
 MAX_NAME_DATA_PREVIEW = 1000
 DEFAULT_RATE_LIMIT_QPS = 5
+LOG_LEVEL = os.getenv("QORTAL_MCP_LOG_LEVEL", "INFO")
 
 
 def load_api_key() -> Optional[str]:
@@ -79,6 +80,7 @@ class QortalConfig:
     default_qdn_results: int = DEFAULT_QDN_RESULTS
     max_name_data_preview: int = MAX_NAME_DATA_PREVIEW
     rate_limit_qps: float = DEFAULT_RATE_LIMIT_QPS
+    log_level: str = LOG_LEVEL
 
 
 default_config = QortalConfig()

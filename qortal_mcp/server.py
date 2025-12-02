@@ -26,7 +26,7 @@ from qortal_mcp.tools import (
 )
 
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO)
+logging.basicConfig(level=getattr(logging, default_config.log_level.upper(), logging.INFO))
 rate_limiter = PerKeyRateLimiter(rate_per_sec=default_config.rate_limit_qps)
 
 @asynccontextmanager

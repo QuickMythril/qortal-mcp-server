@@ -164,7 +164,7 @@ To register with an MCP-capable client (e.g., ChatGPT/Codex IDE):
 
 - A simple per-tool rate limiter (token bucket) defaults to ~5 requests/second
   per tool to protect the underlying Qortal node. Adjust via `QortalConfig.rate_limit_qps`.
-- Logging is minimal and avoids secrets. Add your own handlers/formatters as needed.
+- Logging is minimal and avoids secrets. Adjust log level via `QORTAL_MCP_LOG_LEVEL`.
 ```
 
 Once running, the server can be wired into your LLM tooling as an MCP server or
