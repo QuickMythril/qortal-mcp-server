@@ -11,6 +11,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any, Awaitable, Callable, Dict, List, Optional
 
+from qortal_mcp.config import default_config
 from qortal_mcp.tools import (
     get_account_overview,
     get_balance,
@@ -22,6 +23,20 @@ from qortal_mcp.tools import (
     search_qdn,
     validate_address,
 )
+from qortal_mcp.tools.validators import ADDRESS_REGEX, NAME_MAX_LENGTH, NAME_MIN_LENGTH, NAME_REGEX
+
+
+ADDRESS_PATTERN = ADDRESS_REGEX.pattern
+NAME_PATTERN = NAME_REGEX.pattern
+
+
+def _limit_schema(max_value: int, *, default_minimum: int = 0) -> Dict[str, Any]:
+    return {
+        "type": "integer",
+        "minimum": default_minimum,
+        "maximum": max_value,
+        "description": f"Optional max items (0-{max_value})",
+    }
 
 
 ToolCallable = Callable[..., Awaitable[Any]] | Callable[..., Any]
@@ -41,14 +56,24 @@ TOOL_REGISTRY: Dict[str, ToolDefinition] = {
         name="get_node_status",
         description="Summarize node synchronization and connectivity state.",
         params={},
-        input_schema={"type": "object", "properties": {}, "required": []},
+        input_schema={
+            "type": "object",
+            "properties": {},
+            "required": [],
+            "additionalProperties": False,
+        },
         callable=get_node_status,
     ),
     "get_node_info": ToolDefinition(
         name="get_node_info",
         description="Return node version, uptime, and identifiers.",
         params={},
-        input_schema={"type": "object", "properties": {}, "required": []},
+        input_schema={
+            "type": "object",
+            "properties": {},
+            "required": [],
+            "additionalProperties": False,
+        },
         callable=get_node_info,
     ),
     "get_account_overview": ToolDefinition(
@@ -57,7 +82,15 @@ TOOL_REGISTRY: Dict[str, ToolDefinition] = {
         params={"address": "string (required)"},
         input_schema={
             "type": "object",
-            "properties": {"address": {"type": "string", "description": "Qortal address"}},
+            "properties": {
+                "address": {
+                    "type": "string",
+                    "description": "Qortal address (Q-prefixed Base58)",
+                    "pattern": ADDRESS_PATTERN,
+                    "minLength": 34,
+                    "maxLength": 34,
+                }
+            },
             "required": ["address"],
             "additionalProperties": False,
         },
@@ -70,8 +103,18 @@ TOOL_REGISTRY: Dict[str, ToolDefinition] = {
         input_schema={
             "type": "object",
             "properties": {
-                "address": {"type": "string", "description": "Qortal address"},
-                "asset_id": {"type": "integer", "description": "Asset id (default 0 for QORT)"},
+                "address": {
+                    "type": "string",
+                    "description": "Qortal address (Q-prefixed Base58)",
+                    "pattern": ADDRESS_PATTERN,
+                    "minLength": 34,
+                    "maxLength": 34,
+                },
+                "asset_id": {
+                    "type": "integer",
+                    "description": "Asset id (default 0 for QORT)",
+                    "minimum": 0,
+                },
             },
             "required": ["address"],
             "additionalProperties": False,
@@ -84,7 +127,15 @@ TOOL_REGISTRY: Dict[str, ToolDefinition] = {
         params={"address": "string (required)"},
         input_schema={
             "type": "object",
-            "properties": {"address": {"type": "string", "description": "Qortal address"}},
+            "properties": {
+                "address": {
+                    "type": "string",
+                    "description": "Qortal address (Q-prefixed Base58)",
+                    "pattern": ADDRESS_PATTERN,
+                    "minLength": 34,
+                    "maxLength": 34,
+                }
+            },
             "required": ["address"],
             "additionalProperties": False,
         },
@@ -96,7 +147,15 @@ TOOL_REGISTRY: Dict[str, ToolDefinition] = {
         params={"name": "string (required)"},
         input_schema={
             "type": "object",
-            "properties": {"name": {"type": "string", "description": "Registered Qortal name"}},
+            "properties": {
+                "name": {
+                    "type": "string",
+                    "description": "Registered Qortal name",
+                    "pattern": NAME_PATTERN,
+                    "minLength": NAME_MIN_LENGTH,
+                    "maxLength": NAME_MAX_LENGTH,
+                }
+            },
             "required": ["name"],
             "additionalProperties": False,
         },
@@ -109,8 +168,14 @@ TOOL_REGISTRY: Dict[str, ToolDefinition] = {
         input_schema={
             "type": "object",
             "properties": {
-                "address": {"type": "string", "description": "Qortal address"},
-                "limit": {"type": "integer", "minimum": 0, "description": "Optional max items"},
+                "address": {
+                    "type": "string",
+                    "description": "Qortal address (Q-prefixed Base58)",
+                    "pattern": ADDRESS_PATTERN,
+                    "minLength": 34,
+                    "maxLength": 34,
+                },
+                "limit": _limit_schema(default_config.max_names),
             },
             "required": ["address"],
             "additionalProperties": False,
@@ -124,7 +189,7 @@ TOOL_REGISTRY: Dict[str, ToolDefinition] = {
         input_schema={
             "type": "object",
             "properties": {
-                "limit": {"type": "integer", "minimum": 0, "description": "Optional max items"},
+                "limit": _limit_schema(default_config.max_trade_offers),
             },
             "required": [],
             "additionalProperties": False,
@@ -142,11 +207,26 @@ TOOL_REGISTRY: Dict[str, ToolDefinition] = {
         input_schema={
             "type": "object",
             "properties": {
-                "address": {"type": "string", "description": "Publisher address"},
-                "service": {"type": "integer", "minimum": 0, "description": "Service code"},
-                "limit": {"type": "integer", "minimum": 0, "description": "Optional max items"},
+                "address": {
+                    "type": "string",
+                    "description": "Publisher address (Q-prefixed Base58)",
+                    "pattern": ADDRESS_PATTERN,
+                    "minLength": 34,
+                    "maxLength": 34,
+                },
+                "service": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 65535,
+                    "description": "Service code (0-65535)",
+                },
+                "limit": _limit_schema(default_config.max_qdn_results),
             },
             "required": [],
+            "anyOf": [
+                {"required": ["address"]},
+                {"required": ["service"]},
+            ],
             "additionalProperties": False,
         },
         callable=search_qdn,

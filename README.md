@@ -32,6 +32,9 @@ This project is in early development.
   - `list_trade_offers` – open cross‑chain Trade Portal offers
   - `search_qdn` – constrained search over arbitrary / QDN data
 
+  `get_account_overview` currently returns QORT balance plus names; the
+  `assetBalances` field is intentionally left empty in v1 to avoid large payloads.
+
 The first implementation milestone focuses only on `get_node_status` and
 `get_account_overview`, then expands from there.
 
@@ -188,6 +191,10 @@ Tool calls (post-initialize):
 {"jsonrpc": "2.0", "id": 2, "method": "tools/list"}
 {"jsonrpc": "2.0", "id": 3, "method": "tools/call", "params": {"name": "validate_address", "arguments": {"address": "Q..."}}}
 ```
+
+Tool responses include a `content` array (e.g. `{ "result": { "content": [ { "type": "object", "object": { ...tool result... } } ] } }`).
+Protocol-level failures use the JSON-RPC `error` field; tool-level validation
+errors stay inside the returned object (e.g. `{ "error": "Invalid Qortal address." }`).
 
 Manifest: `mcp-manifest.json` points at `http://localhost:8000/mcp` with name
 `qortal-mcp-server` and version `0.1.0`. Update the endpoint for remote usage.

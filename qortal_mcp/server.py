@@ -337,6 +337,15 @@ async def mcp_gateway(request: Request) -> JSONResponse:
         tool_params = params.get("params")
         if tool_params is None:
             tool_params = params.get("arguments") or {}
+        if not isinstance(tool_name, str) or not tool_name.strip():
+            payload = _jsonrpc_error_payload(rpc_id, -32602, "Invalid params", request_id=request_id)
+            return _respond(
+                payload,
+                outcome="error",
+                method_label=method,
+                tool_label=None,
+                error_code=-32602,
+            )
         if not isinstance(tool_params, dict):
             payload = _jsonrpc_error_payload(rpc_id, -32602, "Invalid params", request_id=request_id)
             return _respond(payload, outcome="error", method_label=method, tool_label=tool_name, error_code=-32602)
@@ -390,6 +399,9 @@ def _wrap_tool_result(result: Any) -> Dict[str, Any]:
     content_item: Dict[str, Any]
     if isinstance(result, str):
         content_item = {"type": "text", "text": result}
+    elif isinstance(result, list):
+        # MCP clients expect "object" to be a map, so wrap lists in an object container.
+        content_item = {"type": "object", "object": {"items": result}}
     else:
         content_item = {"type": "object", "object": result}
     return {"content": [content_item]}

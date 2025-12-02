@@ -430,6 +430,9 @@ Responsibilities: fileciteturn0file0
   matching MCP spec version `2025-03-26`.
 - Tool methods: accepts both `tools/list` and `list_tools` for listing, and
   `tools/call` or `call_tool` for invocation (`name`/`tool` + `arguments`/`params`).
+- Responses to tool calls are wrapped in a MCP `content` array with an
+  `object` item holding the tool result (errors included) for easy consumption
+  by MCP clients.
 - Protocol-level errors (unknown method, invalid params, parse errors) use
   top-level JSON-RPC `error` objects; tool-level validation stays in
   `result.error` for LLM simplicity.
