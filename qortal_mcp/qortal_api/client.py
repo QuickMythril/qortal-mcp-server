@@ -127,6 +127,7 @@ class QortalApiClient:
         params: Optional[Dict[str, Any]] = None,
         use_api_key: bool = False,
         expect_dict: bool = True,
+        expect_json: bool = True,
     ) -> Any:
         client = await self._get_client()
         headers: Dict[str, str] = {}
@@ -142,11 +143,12 @@ class QortalApiClient:
         if response.status_code == 401:
             raise UnauthorizedError("Unauthorized or API key required.", status_code=401)
 
-        try:
-            data = response.json()
-        except ValueError as exc:
-            logger.error("Unexpected non-JSON response from node at %s", path)
-            raise QortalApiError("Unexpected response from node.", status_code=response.status_code) from exc
+        data: Any = None
+        if expect_json or response.status_code >= 400:
+            try:
+                data = response.json()
+            except ValueError:
+                data = None
 
         if response.status_code >= 400:
             error_field: Optional[str | int] = None
@@ -159,6 +161,12 @@ class QortalApiClient:
                 if isinstance(raw_message, str):
                     message_field = raw_message
             raise self._map_error(error_field, response.status_code, message=message_field)
+
+        if not expect_json:
+            return response.text
+
+        if data is None:
+            raise QortalApiError("Unexpected response from node.", status_code=response.status_code)
 
         if expect_dict and not isinstance(data, dict):
             raise QortalApiError("Unexpected response from node.", status_code=response.status_code)
@@ -326,7 +334,7 @@ class QortalApiClient:
         params: Dict[str, Any] = {}
         if minimum_timestamp is not None:
             params["minimumTimestamp"] = minimum_timestamp
-        return await self._request(f"/crosschain/ledger/{encoded}", params=params or None, expect_dict=False)
+        return await self._request(f"/crosschain/ledger/{encoded}", params=params or None, expect_dict=False, expect_json=False)
 
     async def fetch_trade_price(
         self,

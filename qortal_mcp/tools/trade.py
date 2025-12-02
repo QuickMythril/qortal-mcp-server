@@ -16,6 +16,8 @@ from qortal_mcp.tools.validators import clamp_limit
 
 logger = logging.getLogger(__name__)
 
+BASE58_REGEX = re.compile(r"^[1-9A-HJ-NP-Za-km-z]+$")
+
 
 def _normalize_offer(raw_offer: Dict[str, Any]) -> Dict[str, Any]:
     # The Core response varies by version; prefer the most specific fields and
@@ -42,6 +44,15 @@ def _normalize_offer(raw_offer: Dict[str, Any]) -> Dict[str, Any]:
         "mode": raw_offer.get("mode"),
         "timestamp": timestamp,
     }
+
+
+def _is_base58(value: str, *, min_len: int, max_len: int) -> bool:
+    if not value or not isinstance(value, str):
+        return False
+    stripped = value.strip()
+    if len(stripped) < min_len or len(stripped) > max_len:
+        return False
+    return bool(BASE58_REGEX.fullmatch(stripped))
 
 
 async def list_trade_offers(
@@ -150,6 +161,8 @@ async def get_trade_detail(
     """Fetch detailed trade info for a specific AT address."""
     if not at_address or not isinstance(at_address, str):
         return {"error": "AT address is required."}
+    if not _is_base58(at_address, min_len=32, max_len=36):
+        return {"error": "Invalid AT address."}
     try:
         raw = await client.fetch_trade_detail(at_address)
     except UnauthorizedError:
@@ -202,6 +215,14 @@ async def list_completed_trades(
         if minimum_timestamp <= 0:
             return {"error": "Invalid minimumTimestamp."}
 
+    def _valid_public_key(value: Optional[str]) -> bool:
+        if value is None:
+            return True
+        return _is_base58(value, min_len=43, max_len=45)
+
+    if not _valid_public_key(buyer_public_key) or not _valid_public_key(seller_public_key):
+        return {"error": "Invalid public key."}
+
     effective_limit = clamp_limit(limit, default=config.default_trade_offers, max_value=config.max_trade_offers)
     effective_offset = clamp_limit(offset, default=0, max_value=config.max_trade_offers)
 
@@ -252,6 +273,8 @@ async def get_trade_ledger(
     """Fetch trade ledger entries CSV for a public key (returns raw payload)."""
     if not public_key or not isinstance(public_key, str):
         return {"error": "Public key is required."}
+    if not _is_base58(public_key, min_len=43, max_len=45):
+        return {"error": "Invalid public key."}
     if minimum_timestamp is not None:
         try:
             minimum_timestamp = int(minimum_timestamp)
