@@ -344,7 +344,7 @@ status. fileciteturn0file0
 ```json
 [
   {
-    "tradeAddress": "Q...",
+    "tradeAddress": "AK... (AT address)",
     "creator": "Q...",
     "offeringQort": "500.00000000",
     "expectedForeign": "0.01000000",
@@ -381,7 +381,8 @@ At least one of `address` or `service` must be provided.
   {
     "signature": "…",
     "service": 120,
-    "timestamp": 0
+    "timestamp": 0,
+    "publisher": "Q..."  // included when available from Core; omitted otherwise
   }
 ]
 ```

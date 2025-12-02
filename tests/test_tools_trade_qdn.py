@@ -126,6 +126,20 @@ async def test_qdn_clamps_limit_and_maps_results():
 
 
 @pytest.mark.asyncio
+async def test_name_normalization_defaults_sale_flags():
+    raw_entry = {
+        "name": "abc",
+        "owner": "Q",
+        "data": "x",
+        "registeredWhen": 1,
+        "updatedWhen": 2,
+    }
+    normalized = qortal_mcp.tools.names._normalize_name_entry(raw_entry, 100)  # type: ignore[attr-defined]
+    assert normalized["isForSale"] is False
+    assert normalized["salePrice"] is None
+
+
+@pytest.mark.asyncio
 async def test_qdn_invalid_service_code():
     result = await search_qdn(service="not-int")
     assert result == {"error": "Invalid service code or name."}

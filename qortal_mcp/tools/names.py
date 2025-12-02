@@ -44,14 +44,16 @@ def _normalize_name_entry(raw: Any, max_length: int) -> Optional[Dict[str, Any]]
         or raw.get("updatedWhen")
         or raw.get("updated")
     )
+    is_for_sale = raw.get("is_for_sale") if "is_for_sale" in raw else raw.get("isForSale")
+    sale_price = raw.get("sale_price") if "sale_price" in raw else raw.get("salePrice")
     return {
         "name": name_value,
         "owner": raw.get("owner"),
         "data": _truncate_data(raw.get("data"), max_length),
         "registeredWhen": registered,
         "updatedWhen": updated,
-        "isForSale": raw.get("is_for_sale") if "is_for_sale" in raw else raw.get("isForSale"),
-        "salePrice": raw.get("sale_price") if "sale_price" in raw else raw.get("salePrice"),
+        "isForSale": bool(is_for_sale) if is_for_sale is not None else False,
+        "salePrice": sale_price,
     }
 
 

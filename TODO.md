@@ -33,3 +33,11 @@ This list merges the gaps I found and the other CLI agent’s findings. Use it a
 - Address utilities (read-only): `/addresses/lastreference/{address}`, `/addresses/online`, `/addresses/online/levels`, `/addresses/publickey/{address}`, `/addresses/convert/{publickey}`.
 - Admin read-only (optional): `/admin/settings`, `/admin/settings/{setting}`, `/admin/summary/alltime`, `/admin/enginestats`, `/admin/mintingaccounts`.
 - Additional block/tx endpoints currently skipped: `/blocks/signature/{signature}/data`, `/blocks/signature/{signature}/transactions`, `/blocks/child/{signature}`, `/blocks/onlineaccounts/{height}`, `/blocks/signer/{address}`; transaction helpers like unitfee/fee/convert/raw/processing remain out of scope for now.
+
+## New tasks from latest review
+- QDN publisher field: confirm Core search payload; if present, include `publisher` in search_qdn outputs and update DESIGN to match (else document intentional omission).
+- Name listing defaults: in name normalization, default `isForSale` to False when missing; keep `salePrice` null if absent. Add tests.
+- Trade offer docs: clarify that `tradeAddress` is the AT address; current mapping supersedes the “creator trade address” suggestion.
+- Asset balances roadmap: keep TODO to add limited assetBalances to account overview in a future iteration.
+- MCP initialize test: add JSON-RPC `/mcp` initialize integration test to assert envelope fields.
+- Docs cleanup: ensure DESIGN/README reflect current outputs (search_qdn example fixed; trade address semantics documented).
