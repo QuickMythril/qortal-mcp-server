@@ -2,8 +2,16 @@ import pytest
 from fastapi.testclient import TestClient
 
 from qortal_mcp.server import app
-from qortal_mcp.tools.names import get_name_info, get_names_by_address, _truncate_data
-from qortal_mcp.qortal_api.client import NameNotFoundError, UnauthorizedError, NodeUnreachableError
+from qortal_mcp.tools.names import (
+    get_name_info,
+    get_names_by_address,
+    get_primary_name,
+    search_names,
+    list_names,
+    list_names_for_sale,
+    _truncate_data,
+)
+from qortal_mcp.qortal_api.client import NameNotFoundError, UnauthorizedError, NodeUnreachableError, QortalApiError
 
 
 @pytest.mark.asyncio
@@ -185,3 +193,96 @@ def test_json_log_mode_initialization(monkeypatch):
     import qortal_mcp.server as server_mod
 
     importlib.reload(server_mod)
+
+
+@pytest.mark.asyncio
+async def test_get_primary_name_happy_and_missing():
+    class StubClient:
+        async def fetch_primary_name(self, address):
+            return {"name": "primary"}
+
+    result = await get_primary_name("QgB7zMfujQMLkisp1Lc8PBkVYs75sYB3vV", client=StubClient())
+    assert result == {"address": "QgB7zMfujQMLkisp1Lc8PBkVYs75sYB3vV", "name": "primary"}
+
+    class EmptyClient:
+        async def fetch_primary_name(self, address):
+            return {}
+
+    result = await get_primary_name("QgB7zMfujQMLkisp1Lc8PBkVYs75sYB3vV", client=EmptyClient())
+    assert result["name"] is None
+
+
+@pytest.mark.asyncio
+async def test_get_primary_name_invalid():
+    result = await get_primary_name("bad")
+    assert result == {"error": "Invalid Qortal address."}
+
+
+@pytest.mark.asyncio
+async def test_get_primary_name_error_mapping():
+    class StubClient:
+        async def fetch_primary_name(self, *_args, **_kwargs):
+            raise UnauthorizedError("nope")
+
+    result = await get_primary_name("QgB7zMfujQMLkisp1Lc8PBkVYs75sYB3vV", client=StubClient())
+    assert result == {"error": "Unauthorized or API key required."}
+
+
+@pytest.mark.asyncio
+async def test_search_names_happy_path():
+    class StubClient:
+        async def search_names(self, query, prefix=None, limit=None, offset=None, reverse=None):
+            return [
+                {"name": "abc", "owner": "Q1", "data": "d1", "registered_when": 1},
+                {"name": "abd", "owner": "Q2", "data": "d2", "registered_when": 2},
+            ]
+
+    results = await search_names("ab", limit=1, client=StubClient())
+    assert len(results) == 1
+    assert results[0]["name"] == "abc"
+
+
+@pytest.mark.asyncio
+async def test_search_names_error():
+    class StubClient:
+        async def search_names(self, *_args, **_kwargs):
+            raise QortalApiError("fail")
+
+    result = await search_names("x", client=StubClient())
+    assert result == {"error": "Qortal API error."}
+
+
+@pytest.mark.asyncio
+async def test_list_names_happy_path():
+    class StubClient:
+        async def fetch_all_names(self, *, after=None, limit=None, offset=None, reverse=None):
+            return [{"name": "a", "owner": "Q"}]
+
+    result = await list_names(limit=1, client=StubClient())
+    assert result == [{"name": "a", "owner": "Q", "data": None, "registeredWhen": None, "updatedWhen": None, "isForSale": None, "salePrice": None}]
+
+
+@pytest.mark.asyncio
+async def test_list_names_invalid_after():
+    result = await list_names(after="bad")
+    assert result == {"error": "Invalid 'after' timestamp."}
+
+
+@pytest.mark.asyncio
+async def test_list_names_for_sale_happy_path():
+    class StubClient:
+        async def fetch_names_for_sale(self, *, limit=None, offset=None, reverse=None):
+            return [{"name": "for-sale", "owner": "Q"}]
+
+    result = await list_names_for_sale(client=StubClient())
+    assert result and result[0]["name"] == "for-sale"
+
+
+@pytest.mark.asyncio
+async def test_list_names_for_sale_error():
+    class StubClient:
+        async def fetch_names_for_sale(self, *_args, **_kwargs):
+            raise NodeUnreachableError("down")
+
+    result = await list_names_for_sale(client=StubClient())
+    assert result == {"error": "Node unreachable"}

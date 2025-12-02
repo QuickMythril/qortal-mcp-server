@@ -22,6 +22,10 @@ from qortal_mcp.tools import (
     get_balance,
     get_name_info,
     get_names_by_address,
+    get_primary_name,
+    search_names,
+    list_names,
+    list_names_for_sale,
     get_node_info,
     get_node_status,
     get_node_summary,
@@ -232,14 +236,86 @@ async def name_info(name: str, request: Request) -> JSONResponse:
 
 
 @app.get("/tools/names_by_address/{address}")
-async def names_by_address(address: str, request: Request, limit: int | None = Query(None, ge=0)) -> JSONResponse:
+async def names_by_address(
+    address: str,
+    request: Request,
+    limit: int | None = Query(None, ge=0),
+    offset: int | None = Query(None, ge=0),
+    reverse: bool | None = Query(None),
+) -> JSONResponse:
     """Proxy for get_names_by_address tool."""
     limited = await _enforce_rate_limit("get_names_by_address")
     if limited:
         return limited
-    result = await get_names_by_address(address, limit=limit)
+    result = await get_names_by_address(address, limit=limit, offset=offset, reverse=reverse)
     request_id = getattr(request.state, "request_id", None)
     _log_tool_result("get_names_by_address", result if isinstance(result, dict) else {}, request_id)
+    return JSONResponse(content=result)
+
+
+@app.get("/tools/primary_name/{address}")
+async def primary_name(address: str, request: Request) -> JSONResponse:
+    """Proxy for get_primary_name tool."""
+    limited = await _enforce_rate_limit("get_primary_name")
+    if limited:
+        return limited
+    result = await get_primary_name(address)
+    request_id = getattr(request.state, "request_id", None)
+    _log_tool_result("get_primary_name", result if isinstance(result, dict) else {}, request_id)
+    return JSONResponse(content=result)
+
+
+@app.get("/tools/search_names")
+async def search_names_route(
+    request: Request,
+    query: str | None = None,
+    prefix: bool | None = Query(None),
+    limit: int | None = Query(None, ge=0),
+    offset: int | None = Query(None, ge=0),
+    reverse: bool | None = Query(None),
+) -> JSONResponse:
+    """Proxy for search_names tool."""
+    limited = await _enforce_rate_limit("search_names")
+    if limited:
+        return limited
+    result = await search_names(query or "", prefix=prefix, limit=limit, offset=offset, reverse=reverse)
+    request_id = getattr(request.state, "request_id", None)
+    _log_tool_result("search_names", result if isinstance(result, dict) else {}, request_id)
+    return JSONResponse(content=result)
+
+
+@app.get("/tools/list_names")
+async def list_names_route(
+    request: Request,
+    after: int | None = Query(None, ge=0),
+    limit: int | None = Query(None, ge=0),
+    offset: int | None = Query(None, ge=0),
+    reverse: bool | None = Query(None),
+) -> JSONResponse:
+    """Proxy for list_names tool."""
+    limited = await _enforce_rate_limit("list_names")
+    if limited:
+        return limited
+    result = await list_names(after=after, limit=limit, offset=offset, reverse=reverse)
+    request_id = getattr(request.state, "request_id", None)
+    _log_tool_result("list_names", result if isinstance(result, dict) else {}, request_id)
+    return JSONResponse(content=result)
+
+
+@app.get("/tools/list_names_for_sale")
+async def list_names_for_sale_route(
+    request: Request,
+    limit: int | None = Query(None, ge=0),
+    offset: int | None = Query(None, ge=0),
+    reverse: bool | None = Query(None),
+) -> JSONResponse:
+    """Proxy for list_names_for_sale tool."""
+    limited = await _enforce_rate_limit("list_names_for_sale")
+    if limited:
+        return limited
+    result = await list_names_for_sale(limit=limit, offset=offset, reverse=reverse)
+    request_id = getattr(request.state, "request_id", None)
+    _log_tool_result("list_names_for_sale", result if isinstance(result, dict) else {}, request_id)
     return JSONResponse(content=result)
 
 

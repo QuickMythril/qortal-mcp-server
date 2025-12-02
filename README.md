@@ -24,11 +24,14 @@ This project is in early development.
 - **v1 goal**: minimal but useful tool set + stable Python server:
   - `get_node_status` – node sync / connectivity status
   - `get_node_info` – version, uptime, node id
+  - `get_node_summary` / `get_node_uptime` – extra admin node views
   - `get_account_overview` – address info, QORT balance, optional names / assets
   - `get_balance` – simple QORT / asset balance lookup (optional)
   - `validate_address` – utility for checking address format
   - `get_name_info` – single name lookup
-  - `get_names_by_address` – names owned by an address
+  - `get_names_by_address` – names owned by an address (supports limit/offset/reverse)
+  - `get_primary_name` – primary name for an address
+  - `search_names`, `list_names`, `list_names_for_sale` – name discovery helpers
   - `list_trade_offers` – open cross‑chain Trade Portal offers
   - `search_qdn` – constrained search over arbitrary / QDN data
 

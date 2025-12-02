@@ -169,6 +169,30 @@ current time).
 
 - `GET /admin/info` fileciteturn0file0
 
+#### `get_node_summary` (v1)
+
+**Purpose** – Return node summary info.
+
+**Inputs** – none
+
+**Outputs** – summary object from Core
+
+**Qortal endpoint**
+
+- `GET /admin/summary`
+
+#### `get_node_uptime` (v1)
+
+**Purpose** – Return node uptime.
+
+**Inputs** – none
+
+**Outputs** – `{ "uptime": <int> }` (wrapped from Core’s numeric response)
+
+**Qortal endpoint**
+
+- `GET /admin/uptime`
+
 ### 3.2 Account tools
 
 #### `get_account_overview` (v1)

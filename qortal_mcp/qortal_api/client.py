@@ -210,6 +210,48 @@ class QortalApiClient:
         encoded = quote(name, safe="")
         return await self._request(f"/names/{encoded}")
 
+    async def fetch_primary_name(self, address: str) -> Dict[str, Any]:
+        """Retrieve primary name for an address."""
+        encoded = quote(address, safe="")
+        return await self._request(f"/names/primary/{encoded}")
+
+    async def search_names(self, query: str, *, prefix: Optional[bool] = None, limit: Optional[int] = None, offset: Optional[int] = None, reverse: Optional[bool] = None) -> Any:
+        """Search registered names."""
+        params: Dict[str, Any] = {"query": query}
+        if prefix is not None:
+            params["prefix"] = prefix
+        if limit is not None:
+            params["limit"] = limit
+        if offset is not None:
+            params["offset"] = offset
+        if reverse is not None:
+            params["reverse"] = reverse
+        return await self._request("/names/search", params=params, expect_dict=False)
+
+    async def fetch_all_names(self, *, after: Optional[int] = None, limit: Optional[int] = None, offset: Optional[int] = None, reverse: Optional[bool] = None) -> Any:
+        """List all names."""
+        params: Dict[str, Any] = {}
+        if after is not None:
+            params["after"] = after
+        if limit is not None:
+            params["limit"] = limit
+        if offset is not None:
+            params["offset"] = offset
+        if reverse is not None:
+            params["reverse"] = reverse
+        return await self._request("/names", params=params or None, expect_dict=False)
+
+    async def fetch_names_for_sale(self, *, limit: Optional[int] = None, offset: Optional[int] = None, reverse: Optional[bool] = None) -> Any:
+        """List names currently for sale."""
+        params: Dict[str, Any] = {}
+        if limit is not None:
+            params["limit"] = limit
+        if offset is not None:
+            params["offset"] = offset
+        if reverse is not None:
+            params["reverse"] = reverse
+        return await self._request("/names/forsale", params=params or None, expect_dict=False)
+
     async def fetch_trade_offers(self, *, limit: int) -> Any:
         """List open cross-chain trade offers."""
         return await self._request("/crosschain/tradeoffers", params={"limit": limit}, expect_dict=False)

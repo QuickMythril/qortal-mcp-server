@@ -52,3 +52,18 @@ async def test_search_qdn_passes_filters():
     assert result == [{"signature": "s"}]
     call = client._client.calls[0]
     assert call["params"] == {"address": "Q1", "service": 2, "limit": 3}
+
+
+@pytest.mark.asyncio
+async def test_fetch_all_names_and_forsale_params():
+    client = QortalApiClient(async_client=CaptureClient([{"name": "a"}]))
+    result = await client.fetch_all_names(after=1, limit=2, offset=3, reverse=True)
+    assert result == [{"name": "a"}]
+    call = client._client.calls[0]
+    assert call["params"] == {"after": 1, "limit": 2, "offset": 3, "reverse": True}
+
+    client = QortalApiClient(async_client=CaptureClient([{"name": "sale"}]))
+    result = await client.fetch_names_for_sale(limit=1, offset=2, reverse=True)
+    assert result == [{"name": "sale"}]
+    call = client._client.calls[0]
+    assert call["params"] == {"limit": 1, "offset": 2, "reverse": True}
