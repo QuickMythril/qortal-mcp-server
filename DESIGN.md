@@ -382,7 +382,8 @@ At least one of `address` or `service` must be provided.
     "signature": "…",
     "service": 120,
     "timestamp": 0,
-    "publisher": "Q..."  // included when available from Core; omitted otherwise
+    "name": "resource-name",        // Core name field (publisher's Qortal name, if set on the tx)
+    "identifier": "resource-id"     // Core identifier field, if present
   }
 ]
 ```

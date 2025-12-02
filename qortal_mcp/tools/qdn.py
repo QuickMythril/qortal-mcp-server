@@ -23,7 +23,8 @@ def _normalize_search_entry(raw: Dict[str, Any]) -> Dict[str, Any]:
         "signature": raw.get("signature"),
         "service": raw.get("service"),
         "timestamp": raw.get("timestamp"),
-        "publisher": raw.get("publisher") or raw.get("name"),
+        "name": raw.get("name"),
+        "identifier": raw.get("identifier"),
     }
 
 
