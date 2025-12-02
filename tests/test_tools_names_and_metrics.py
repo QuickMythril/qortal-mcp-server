@@ -234,12 +234,13 @@ async def test_search_names_happy_path():
         async def search_names(self, query, prefix=None, limit=None, offset=None, reverse=None):
             return [
                 {"name": "abc", "owner": "Q1", "data": "d1", "registered_when": 1},
-                {"name": "abd", "owner": "Q2", "data": "d2", "registered_when": 2},
+                {"name": "abd", "owner": "Q2", "data": "d2", "registered": 2},
             ]
 
     results = await search_names("ab", limit=1, client=StubClient())
     assert len(results) == 1
     assert results[0]["name"] == "abc"
+    assert results[0]["registeredWhen"] == 1
 
 
 @pytest.mark.asyncio
@@ -256,10 +257,20 @@ async def test_search_names_error():
 async def test_list_names_happy_path():
     class StubClient:
         async def fetch_all_names(self, *, after=None, limit=None, offset=None, reverse=None):
-            return [{"name": "a", "owner": "Q"}]
+            return [{"name": "a", "owner": "Q", "registered": 5, "updated": 6}]
 
     result = await list_names(limit=1, client=StubClient())
-    assert result == [{"name": "a", "owner": "Q", "data": None, "registeredWhen": None, "updatedWhen": None, "isForSale": None, "salePrice": None}]
+    assert result == [
+        {
+            "name": "a",
+            "owner": "Q",
+            "data": None,
+            "registeredWhen": 5,
+            "updatedWhen": 6,
+            "isForSale": None,
+            "salePrice": None,
+        }
+    ]
 
 
 @pytest.mark.asyncio
@@ -272,10 +283,10 @@ async def test_list_names_invalid_after():
 async def test_list_names_for_sale_happy_path():
     class StubClient:
         async def fetch_names_for_sale(self, *, limit=None, offset=None, reverse=None):
-            return [{"name": "for-sale", "owner": "Q"}]
+            return [{"name": "for-sale", "owner": "Q", "registered_when": 1, "updated_when": 2}]
 
     result = await list_names_for_sale(client=StubClient())
-    assert result and result[0]["name"] == "for-sale"
+    assert result and result[0]["name"] == "for-sale" and result[0]["registeredWhen"] == 1 and result[0]["updatedWhen"] == 2
 
 
 @pytest.mark.asyncio
@@ -286,3 +297,9 @@ async def test_list_names_for_sale_error():
 
     result = await list_names_for_sale(client=StubClient())
     assert result == {"error": "Node unreachable"}
+
+
+@pytest.mark.asyncio
+async def test_list_names_for_sale_address_not_supported():
+    result = await list_names_for_sale(address="QgB7zMfujQMLkisp1Lc8PBkVYs75sYB3vV")
+    assert result == {"error": "Filtering by address is not supported for names for sale."}

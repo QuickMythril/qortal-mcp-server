@@ -34,12 +34,22 @@ def _normalize_name_entry(raw: Any, max_length: int) -> Optional[Dict[str, Any]]
     name_value = raw.get("name")
     if not isinstance(name_value, str):
         return None
+    registered = (
+        raw.get("registered_when")
+        or raw.get("registeredWhen")
+        or raw.get("registered")
+    )
+    updated = (
+        raw.get("updated_when")
+        or raw.get("updatedWhen")
+        or raw.get("updated")
+    )
     return {
         "name": name_value,
         "owner": raw.get("owner"),
         "data": _truncate_data(raw.get("data"), max_length),
-        "registeredWhen": raw.get("registered_when") or raw.get("registeredWhen"),
-        "updatedWhen": raw.get("updated_when") or raw.get("updatedWhen"),
+        "registeredWhen": registered,
+        "updatedWhen": updated,
         "isForSale": raw.get("is_for_sale") if "is_for_sale" in raw else raw.get("isForSale"),
         "salePrice": raw.get("sale_price") if "sale_price" in raw else raw.get("salePrice"),
     }
@@ -238,10 +248,13 @@ async def list_names_for_sale(
     limit: Optional[int] = None,
     offset: Optional[int] = None,
     reverse: Optional[bool] = None,
+    address: Optional[str] = None,
     client=default_client,
     config: QortalConfig = default_config,
 ) -> List[Dict[str, Any]] | Dict[str, str]:
     """List names currently for sale."""
+    if address:
+        return {"error": "Filtering by address is not supported for names for sale."}
     effective_limit = clamp_limit(limit, default=config.max_names, max_value=config.max_names)
     try:
         raw = await client.fetch_names_for_sale(limit=effective_limit, offset=offset, reverse=reverse)
