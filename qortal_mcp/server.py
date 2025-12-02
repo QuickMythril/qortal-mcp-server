@@ -20,6 +20,7 @@ from qortal_mcp.tools import (
     search_qdn,
     validate_address,
 )
+from qortal_mcp import mcp
 
 logger = logging.getLogger(__name__)
 
@@ -117,6 +118,31 @@ async def qdn_search(
 async def shutdown_event() -> None:
     """Ensure HTTP client resources are released on shutdown."""
     await default_client.aclose()
+
+
+@app.post("/mcp")
+async def mcp_gateway(request: Dict[str, Any]) -> JSONResponse:
+    """
+    Minimal JSON-RPC-like gateway for MCP-style integrations.
+
+    Supported methods:
+      - list_tools
+      - call_tool (with params: tool, params)
+    """
+    method = request.get("method")
+    rpc_id = request.get("id")
+    params = request.get("params") or {}
+
+    if method == "list_tools":
+        result = mcp.list_tools()
+    elif method == "call_tool":
+        tool_name = params.get("tool")
+        tool_params = params.get("params") or {}
+        result = await mcp.call_tool(tool_name, tool_params)
+    else:
+        result = {"error": "Unknown method."}
+
+    return JSONResponse(content={"jsonrpc": "2.0", "id": rpc_id, "result": result})
 
 
 # Run with: uvicorn qortal_mcp.server:app --reload

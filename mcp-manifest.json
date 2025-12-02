@@ -1,0 +1,21 @@
+{
+  "name": "qortal-mcp-server",
+  "version": "0.1.0",
+  "description": "Read-only Qortal MCP tool surface over HTTP/JSON-RPC.",
+  "transport": {
+    "type": "http",
+    "endpoint": "http://localhost:8000/mcp",
+    "protocol": "jsonrpc-2.0"
+  },
+  "tools": [
+    "get_node_status",
+    "get_node_info",
+    "get_account_overview",
+    "get_balance",
+    "validate_address",
+    "get_name_info",
+    "get_names_by_address",
+    "list_trade_offers",
+    "search_qdn"
+  ]
+}

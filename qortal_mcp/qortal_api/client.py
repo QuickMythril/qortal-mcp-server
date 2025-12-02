@@ -56,19 +56,26 @@ class NodeUnreachableError(QortalApiError):
 class QortalApiClient:
     """Async client for the limited Qortal Core API surface."""
 
-    def __init__(self, config: QortalConfig | None = None) -> None:
+    def __init__(
+        self,
+        config: QortalConfig | None = None,
+        *,
+        async_client: Optional[httpx.AsyncClient] = None,
+    ) -> None:
         self.config = config or default_config
-        self._client: Optional[httpx.AsyncClient] = None
+        self._client: Optional[httpx.AsyncClient] = async_client
+        self._owns_client = async_client is None
 
     async def _get_client(self) -> httpx.AsyncClient:
         if self._client is None:
             self._client = httpx.AsyncClient(
                 base_url=self.config.base_url, timeout=self.config.timeout
             )
+            self._owns_client = True
         return self._client
 
     async def aclose(self) -> None:
-        if self._client is not None:
+        if self._client is not None and self._owns_client:
             await self._client.aclose()
             self._client = None
 

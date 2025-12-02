@@ -1,0 +1,129 @@
+"""
+Lightweight JSON-RPC surface for MCP-style tooling.
+
+This keeps a minimal, safe mapping of tool names to existing implementations.
+It is intentionally small and stateless; caller must handle authentication to
+the HTTP server hosting this adapter.
+"""
+
+from __future__ import annotations
+
+from dataclasses import dataclass
+from typing import Any, Awaitable, Callable, Dict, List, Optional
+
+from qortal_mcp.tools import (
+    get_account_overview,
+    get_balance,
+    get_name_info,
+    get_names_by_address,
+    get_node_info,
+    get_node_status,
+    list_trade_offers,
+    search_qdn,
+    validate_address,
+)
+
+
+ToolCallable = Callable[..., Awaitable[Any]] | Callable[..., Any]
+
+
+@dataclass(slots=True)
+class ToolDefinition:
+    name: str
+    description: str
+    params: Dict[str, Any]
+    callable: ToolCallable
+
+
+TOOL_REGISTRY: Dict[str, ToolDefinition] = {
+    "get_node_status": ToolDefinition(
+        name="get_node_status",
+        description="Summarize node synchronization and connectivity state.",
+        params={},
+        callable=get_node_status,
+    ),
+    "get_node_info": ToolDefinition(
+        name="get_node_info",
+        description="Return node version, uptime, and identifiers.",
+        params={},
+        callable=get_node_info,
+    ),
+    "get_account_overview": ToolDefinition(
+        name="get_account_overview",
+        description="Return account info, QORT balance, and names for an address.",
+        params={"address": "string (required)"},
+        callable=get_account_overview,
+    ),
+    "get_balance": ToolDefinition(
+        name="get_balance",
+        description="Return balance for a given address and assetId (default 0/QORT).",
+        params={"address": "string (required)", "asset_id": "integer (optional, default 0)"},
+        callable=get_balance,
+    ),
+    "validate_address": ToolDefinition(
+        name="validate_address",
+        description="Validate Qortal address format without calling Core.",
+        params={"address": "string (required)"},
+        callable=lambda address: validate_address(address),
+    ),
+    "get_name_info": ToolDefinition(
+        name="get_name_info",
+        description="Return details about a registered name.",
+        params={"name": "string (required)"},
+        callable=get_name_info,
+    ),
+    "get_names_by_address": ToolDefinition(
+        name="get_names_by_address",
+        description="List names owned by an address (limit enforced).",
+        params={"address": "string (required)", "limit": "integer (optional)"},
+        callable=get_names_by_address,
+    ),
+    "list_trade_offers": ToolDefinition(
+        name="list_trade_offers",
+        description="List open cross-chain trade offers (limit enforced).",
+        params={"limit": "integer (optional)"},
+        callable=list_trade_offers,
+    ),
+    "search_qdn": ToolDefinition(
+        name="search_qdn",
+        description="Search QDN/arbitrary metadata by address and/or service.",
+        params={
+            "address": "string (optional)",
+            "service": "integer (optional)",
+            "limit": "integer (optional)",
+        },
+        callable=search_qdn,
+    ),
+}
+
+
+def list_tools() -> List[Dict[str, Any]]:
+    """Return a simple list of available tools."""
+    return [
+        {
+            "name": tool.name,
+            "description": tool.description,
+            "params": tool.params,
+        }
+        for tool in TOOL_REGISTRY.values()
+    ]
+
+
+async def call_tool(tool_name: str, params: Optional[Dict[str, Any]] = None) -> Any:
+    """Dispatch to a tool by name."""
+    params = params or {}
+    tool = TOOL_REGISTRY.get(tool_name)
+    if tool is None:
+        return {"error": f"Unknown tool: {tool_name}"}
+
+    # Match parameters by name; tools already handle validation and error shaping.
+    try:
+        result = tool.callable(**params)
+        if isinstance(result, Awaitable):
+            return await result  # type: ignore[return-value]
+        return result
+    except TypeError:
+        return {"error": "Invalid parameters."}
+    except Exception:
+        return {"error": "Unexpected error while calling tool."}
+

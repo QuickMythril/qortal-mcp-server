@@ -119,6 +119,40 @@ python scripts/sanity_check.py
 # (Optional) Run unit tests
 pip install -r requirements-dev.txt
 pytest
+
+## HTTP usage examples
+
+With the server running (default `http://localhost:8000`):
+
+```bash
+# Node status
+curl http://localhost:8000/tools/node_status
+
+# Account overview
+curl http://localhost:8000/tools/account_overview/QgB7zMfujQMLkisp1Lc8PBkVYs75sYB3vV
+
+# Validate address (no Core call)
+curl http://localhost:8000/tools/validate_address/QgB7zMfujQMLkisp1Lc8PBkVYs75sYB3vV
+
+# Name info
+curl http://localhost:8000/tools/name_info/AGAPE
+
+# Trade offers (limit=3)
+curl "http://localhost:8000/tools/trade_offers?limit=3"
+```
+
+## MCP / JSON-RPC (experimental)
+
+An MCP-style gateway is exposed at `POST /mcp` using a minimal JSON-RPC 2.0
+shape:
+
+```json
+{"jsonrpc": "2.0", "id": 1, "method": "list_tools"}
+{"jsonrpc": "2.0", "id": 2, "method": "call_tool", "params": {"tool": "validate_address", "params": {"address": "Q..."}}}
+```
+
+An example manifest is provided in `mcp-manifest.json` pointing to the default
+endpoint; adjust the URL/port as needed for your deployment.
 ```
 
 Once running, the server can be wired into your LLM tooling as an MCP server or
