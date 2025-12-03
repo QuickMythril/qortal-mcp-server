@@ -14,6 +14,7 @@ for information such as:
 - Account / balance / name information
 - Cross‑chain Trade Portal offers
 - QDN (Qortal Data Network) search metadata
+- Group metadata (group listings, membership, invites/requests/bans)
 
 All write / state‑changing operations are permanently out of scope.
 
@@ -27,6 +28,9 @@ This project is in early development.
     `get_names_by_address`, `get_primary_name`, `search_names`, `list_names`, `list_names_for_sale`
   - Trades: `list_trade_offers` (AT address returned as `tradeAddress`)
   - QDN: `search_qdn` (metadata only; name/identifier included when present)
+  - Groups: `list_groups`, `get_groups_by_owner`, `get_groups_by_member`, `get_group`,
+    `get_group_members`, `get_group_invites_by_address`, `get_group_invites_by_group`,
+    `get_group_join_requests`, `get_group_bans`
   - Blocks: `get_block_at_timestamp`, `get_block_height`, `get_block_by_height`,
     `get_block_by_signature`, `get_block_height_by_signature`, `get_first_block`, `get_last_block`,
     `list_block_summaries`, `list_block_range`
@@ -155,6 +159,13 @@ curl http://localhost:8000/tools/name_info/AGAPE
 
 # Trade offers (limit=3)
 curl "http://localhost:8000/tools/trade_offers?limit=3"
+
+# Groups (list first 5)
+curl "http://localhost:8000/tools/groups?limit=5"
+
+# Group detail + members
+curl "http://localhost:8000/tools/group/1"
+curl "http://localhost:8000/tools/group/1/members?limit=10"
 ```
 
 ## MCP integration (initialize + tools)
