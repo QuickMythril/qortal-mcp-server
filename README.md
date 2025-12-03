@@ -66,6 +66,7 @@ For full details, see **`DESIGN.md`**.
   no sensitive node details).
 - The Qortal Core API key (if required) is kept server-side and never returned
   to callers.
+- Config is read at process startup; set `QORTAL_*` env vars before launching the server (restart to apply changes).
 
 The full security model is documented in **`DESIGN.md`** and enforced via the
 rules in **`AGENTS.md`**.

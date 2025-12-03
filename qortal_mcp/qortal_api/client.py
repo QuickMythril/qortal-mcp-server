@@ -59,6 +59,10 @@ class NodeUnreachableError(QortalApiError):
     """Raised when the node cannot be reached."""
 
 
+def _normalize_url(url: str) -> str:
+    return url.rstrip("/")
+
+
 @dataclass(slots=True)
 class _NodeEntry:
     base_url: str
@@ -170,7 +174,7 @@ class QortalApiClient:
             return None
         ordered: List[str] = []
         seen: set[str] = set()
-        for url in [self.config.base_url, *self.config.public_nodes]:
+        for url in [_normalize_url(self.config.base_url), *map(_normalize_url, self.config.public_nodes)]:
             if not url or url in seen:
                 continue
             ordered.append(url)

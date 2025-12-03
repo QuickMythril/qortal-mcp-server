@@ -728,7 +728,9 @@ Responsibilities: fileciteturn0file0
   exceptions or structured error objects.
 - Tool functions catch these and return standardized error JSON to callers.
 - Unexpected exceptions are logged and surfaced as generic errors without
-  stack traces. fileciteturn0file0
+  stack traces.
+
+Configuration is loaded at process startup; set QORTAL_* environment variables before launching the server (restart required to apply changes). fileciteturn0file0
 
 ### 4.4 Rate limiting & response shaping
 
