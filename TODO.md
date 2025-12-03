@@ -20,11 +20,11 @@ This list merges the gaps I found and the other CLI agent’s findings. Use it a
 - Update MCP manifest/registry and config limits for block summary/range paging; add tests for validation.
 
 ## Block/transaction fixes (in progress)
-- `get_block_at_timestamp`: core returns errors at/just before genesis (e.g., 1593450000000). Add clearer error mapping for timestamps before first block (e.g., “No block at or before timestamp.”) or clamp to genesis min timestamp.
+- `get_block_at_timestamp`: mapped BLOCK_UNKNOWN/404/400 “block not found” responses to “No block at or before timestamp.” (retest genesis-edge).
 - `list_block_signers`: removed from MCP surface for now; if re-enabled later, include limit/offset/reverse with safe defaults and verify `/blocks/signers` wiring.
 - `get_minting_info_by_height`: removed from MCP surface for now; only re-add if we need minting info, with clear error mapping for missing/invalid heights.
-- `list_transactions_by_creator`: Core requires `confirmationStatus`; tool currently omits it, causing “Invalid parameters.” Add required confirmation_status, validate Base58 public key, and clamp limits.
-- `list_transactions_by_block`: inconsistent “Qortal API error” for some block signatures; add Base58/length validation, ensure client uses `expect_dict=False`, map BLOCK_UNKNOWN/INVALID_SIGNATURE to clear errors.
+- `list_transactions_by_creator`: added explicit confirmationStatus requirement earlier; now also maps INVALID_PUBLIC_KEY to a clear error. Re-test against Core.
+- `list_transactions_by_block`: added limit/offset/reverse params with clamping and improved block-not-found mapping; retest against tip blocks/signature edge cases.
 
 ## Trade validation (pending)
 - Validate `get_trade_detail` against live offers now that AT addresses are surfaced; add AT-format validation if needed. Optional but useful for end-to-end sanity.
