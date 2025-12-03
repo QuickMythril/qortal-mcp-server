@@ -113,7 +113,7 @@ class QortalApiClient:
             return NameNotFoundError(
                 "Name not found.", code=normalized or message_upper or None, status_code=status_code
             )
-        block_unknown_signals = {"BLOCK_UNKNOWN"}
+        block_unknown_signals = {"BLOCK_UNKNOWN", "BLOCK NOT FOUND"}
         if signals.intersection(block_unknown_signals) or "block unknown" in lowered_message:
             return QortalApiError(
                 "Block not found.", code=normalized or message_upper or None, status_code=status_code
@@ -129,6 +129,11 @@ class QortalApiClient:
                 "Address not found on chain.",
                 code=normalized or message_upper or None,
                 status_code=status_code,
+            )
+        invalid_public_key_signals = {"INVALID_PUBLIC_KEY"}
+        if signals.intersection(invalid_public_key_signals) or "invalid public key" in lowered_message:
+            return QortalApiError(
+                "Invalid public key.", code=normalized or message_upper or None, status_code=status_code
             )
         invalid_data_signals = {"INVALID_DATA"}
         if signals.intersection(invalid_data_signals) or "invalid data" in lowered_message:
@@ -497,10 +502,24 @@ class QortalApiClient:
         encoded = quote(reference, safe="")
         return await self._request(f"/transactions/reference/{encoded}")
 
-    async def fetch_transactions_by_block(self, signature: str) -> Any:
+    async def fetch_transactions_by_block(
+        self,
+        signature: str,
+        *,
+        limit: Optional[int] = None,
+        offset: Optional[int] = None,
+        reverse: Optional[bool] = None,
+    ) -> Any:
         """Fetch transactions for a block signature."""
         encoded = quote(signature, safe="")
-        return await self._request(f"/transactions/block/{encoded}", expect_dict=False)
+        params: Dict[str, Any] = {}
+        if limit is not None:
+            params["limit"] = limit
+        if offset is not None:
+            params["offset"] = offset
+        if reverse is not None:
+            params["reverse"] = reverse
+        return await self._request(f"/transactions/block/{encoded}", params=params or None, expect_dict=False)
 
     async def fetch_transactions_by_address(
         self,

@@ -141,6 +141,23 @@ async def test_txs_by_block_requires_sig():
 
 
 @pytest.mark.asyncio
+async def test_txs_by_block_forwards_params_and_clamps():
+    captured: dict[str, object] = {}
+
+    class StubClient:
+        async def fetch_transactions_by_block(self, sig, **kwargs):
+            captured["sig"] = sig
+            captured.update(kwargs)
+            return []
+
+    await list_transactions_by_block("A" * 44, limit=500, offset=5, reverse=True, client=StubClient())
+    assert captured["sig"] == "A" * 44
+    assert captured["limit"] == 100
+    assert captured["offset"] == 5
+    assert captured["reverse"] is True
+
+
+@pytest.mark.asyncio
 async def test_txs_by_address_invalid():
     assert await list_transactions_by_address("bad") == {"error": "Invalid Qortal address."}
 
@@ -151,6 +168,18 @@ async def test_txs_by_creator_invalid_key():
     assert await list_transactions_by_creator("QgB7zMfujQMLkisp1Lc8PBkVYs75sYB3vV") == {
         "error": "confirmationStatus is required."
     }
+
+
+@pytest.mark.asyncio
+async def test_txs_by_creator_invalid_key_from_core():
+    class StubClient:
+        async def fetch_transactions_by_creator(self, *args, **kwargs):
+            raise QortalApiError("bad", code="INVALID_PUBLIC_KEY")
+
+    result = await list_transactions_by_creator(
+        "QgB7zMfujQMLkisp1Lc8PBkVYs75sYB3vV", confirmation_status="CONFIRMED", client=StubClient()
+    )
+    assert result == {"error": "Invalid public key."}
 
 
 @pytest.mark.asyncio

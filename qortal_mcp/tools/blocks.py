@@ -28,7 +28,7 @@ async def get_block_at_timestamp(timestamp: Any, *, client=default_client) -> Di
     try:
         return await client.fetch_block_at_timestamp(parsed)
     except QortalApiError as exc:
-        if exc.code in {"BLOCK_UNKNOWN"} or exc.status_code == 404:
+        if exc.code in {"BLOCK_UNKNOWN", "BLOCK NOT FOUND"} or exc.status_code in {400, 404}:
             return {"error": "No block at or before timestamp."}
         return {"error": "Qortal API error."}
     except UnauthorizedError:

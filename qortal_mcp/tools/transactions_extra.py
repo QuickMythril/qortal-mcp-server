@@ -5,6 +5,7 @@ from __future__ import annotations
 import logging
 from typing import Any, Dict, Optional
 
+from qortal_mcp.config import default_config
 from qortal_mcp.qortal_api import (
     InvalidAddressError,
     NodeUnreachableError,
@@ -58,17 +59,31 @@ async def get_transaction_by_reference(reference: str, *, client=default_client)
         return {"error": "Unexpected error while retrieving transaction."}
 
 
-async def list_transactions_by_block(signature: str, *, client=default_client) -> Dict[str, Any]:
+async def list_transactions_by_block(
+    signature: str,
+    *,
+    limit: Optional[int] = None,
+    offset: Optional[int] = None,
+    reverse: Optional[bool] = None,
+    client=default_client,
+    config=default_config,
+) -> Dict[str, Any]:
     normalized = _normalize_sig(signature)
     if not normalized:
         return {"error": "Signature is required."}
     if not _is_base58(normalized, min_len=43, max_len=200):
         return {"error": "Invalid signature."}
+    effective_limit = clamp_limit(limit, default=config.default_tx_search, max_value=100)
+    effective_offset = clamp_limit(offset, default=0, max_value=100)
     try:
-        txs = await client.fetch_transactions_by_block(normalized)
+        txs = await client.fetch_transactions_by_block(
+            normalized, limit=effective_limit, offset=effective_offset, reverse=reverse
+        )
     except QortalApiError as exc:
         if exc.code in {"BLOCK_UNKNOWN", "INVALID_SIGNATURE"} or exc.status_code == 404:
             return {"error": "Block not found."}
+        if exc.code in {"INVALID_PUBLIC_KEY"}:
+            return {"error": "Invalid public key."}
         return {"error": "Qortal API error."}
     except UnauthorizedError:
         return {"error": "Unauthorized or API key required."}
@@ -148,12 +163,14 @@ async def list_transactions_by_creator(
             confirmation_status=normalized_status,
             reverse=reverse,
         )
+    except QortalApiError as exc:
+        if exc.code in {"INVALID_PUBLIC_KEY"}:
+            return {"error": "Invalid public key."}
+        return {"error": "Qortal API error."}
     except UnauthorizedError:
         return {"error": "Unauthorized or API key required."}
     except NodeUnreachableError:
         return {"error": "Node unreachable"}
-    except QortalApiError:
-        return {"error": "Qortal API error."}
     except Exception:
         logger.exception("Unexpected error fetching transactions by creator")
         return {"error": "Unexpected error while retrieving transactions."}

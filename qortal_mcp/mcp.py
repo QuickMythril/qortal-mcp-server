@@ -648,10 +648,20 @@ TOOL_REGISTRY: Dict[str, ToolDefinition] = {
     "list_transactions_by_block": ToolDefinition(
         name="list_transactions_by_block",
         description="List transactions in a block by signature.",
-        params={"signature": "string (required)"},
+        params={
+            "signature": "string (required)",
+            "limit": "integer (optional, max 100)",
+            "offset": "integer (optional, max 100)",
+            "reverse": "boolean (optional)",
+        },
         input_schema={
             "type": "object",
-            "properties": {"signature": {"type": "string"}},
+            "properties": {
+                "signature": {"type": "string"},
+                "limit": {"type": "integer", "minimum": 0, "maximum": 100},
+                "offset": {"type": "integer", "minimum": 0, "maximum": 100},
+                "reverse": {"type": "boolean"},
+            },
             "required": ["signature"],
             "additionalProperties": False,
         },
