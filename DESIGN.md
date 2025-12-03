@@ -626,10 +626,11 @@ These are candidates for later milestones and are not required for v1: fileci
 - Block minter info (`/blocks/byheight/{height}/mintinginfo`) and block signers (`/blocks/signers`)
   were removed from the MCP surface due to low value and potential load; only reintroduce with
   tight limits and a clear use case.
-- Crosschain hidden offers (`/crosschain/tradeoffers/hidden`) are not exposed yet; add only if a
-  clear LLM use case arises and limits are in place.
 - Chat POST helpers (`/chat` and `/chat/compute`) and chat WebSocket feeds remain excluded to keep
   the surface strictly read-only and avoid streaming/large payloads.
+- Address reference helper (`/addresses/lastreference/{address}`) is omitted because Core disables
+  strict reference checking after the feature trigger timestamp; the endpoint offers little value
+  for modern transactions.
 - QDN publisher field is not returned in `search_qdn` results; include it only after confirming the
   Core payload and privacy implications.
 - Account overview omits `assetBalances` beyond QORT to avoid large payloads; consider a bounded
