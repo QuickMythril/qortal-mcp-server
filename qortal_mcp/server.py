@@ -7,7 +7,7 @@ import logging
 import time
 import uuid
 from contextlib import asynccontextmanager
-from typing import Any, Dict, Optional
+from typing import Any, Dict, List, Optional
 
 from fastapi import FastAPI, Query, Request
 from fastapi.responses import JSONResponse, Response
@@ -42,6 +42,10 @@ from qortal_mcp.tools import (
     get_group_invites_by_group,
     get_group_join_requests,
     get_group_bans,
+    get_chat_messages,
+    count_chat_messages,
+    get_chat_message_by_signature,
+    get_active_chats,
 )
 
 logger = logging.getLogger(__name__)
@@ -463,6 +467,117 @@ async def group_bans(group_id: int, request: Request) -> JSONResponse:
     result = await get_group_bans(group_id=group_id)
     request_id = getattr(request.state, "request_id", None)
     _log_tool_result("get_group_bans", result if isinstance(result, dict) else {}, request_id)
+    return JSONResponse(content=result)
+
+
+@app.get("/tools/chat/messages")
+async def chat_messages(
+    request: Request,
+    txGroupId: int | None = Query(None),
+    involving: List[str] | None = Query(None),
+    before: int | None = Query(None),
+    after: int | None = Query(None),
+    reference: str | None = Query(None),
+    chatreference: str | None = Query(None),
+    haschatreference: bool | None = Query(None),
+    sender: str | None = Query(None),
+    encoding: str | None = Query(None),
+    limit: int | None = Query(None, ge=0),
+    offset: int | None = Query(None, ge=0),
+    reverse: bool | None = Query(None),
+) -> JSONResponse:
+    """Proxy for get_chat_messages tool."""
+    limited = await _enforce_rate_limit("get_chat_messages")
+    if limited:
+        return limited
+    result = await get_chat_messages(
+        tx_group_id=txGroupId,
+        involving=involving,
+        before=before,
+        after=after,
+        reference=reference,
+        chat_reference=chatreference,
+        has_chat_reference=haschatreference,
+        sender=sender,
+        encoding=encoding,
+        limit=limit,
+        offset=offset,
+        reverse=reverse,
+    )
+    request_id = getattr(request.state, "request_id", None)
+    _log_tool_result("get_chat_messages", result if isinstance(result, dict) else {}, request_id)
+    return JSONResponse(content=result)
+
+
+@app.get("/tools/chat/messages/count")
+async def chat_messages_count(
+    request: Request,
+    txGroupId: int | None = Query(None),
+    involving: List[str] | None = Query(None),
+    before: int | None = Query(None),
+    after: int | None = Query(None),
+    reference: str | None = Query(None),
+    chatreference: str | None = Query(None),
+    haschatreference: bool | None = Query(None),
+    sender: str | None = Query(None),
+    encoding: str | None = Query(None),
+    limit: int | None = Query(None, ge=0),
+    offset: int | None = Query(None, ge=0),
+    reverse: bool | None = Query(None),
+) -> JSONResponse:
+    """Proxy for count_chat_messages tool."""
+    limited = await _enforce_rate_limit("count_chat_messages")
+    if limited:
+        return limited
+    result = await count_chat_messages(
+        tx_group_id=txGroupId,
+        involving=involving,
+        before=before,
+        after=after,
+        reference=reference,
+        chat_reference=chatreference,
+        has_chat_reference=haschatreference,
+        sender=sender,
+        encoding=encoding,
+        limit=limit,
+        offset=offset,
+        reverse=reverse,
+    )
+    request_id = getattr(request.state, "request_id", None)
+    _log_tool_result("count_chat_messages", result if isinstance(result, dict) else {}, request_id)
+    return JSONResponse(content=result)
+
+
+@app.get("/tools/chat/message/{signature}")
+async def chat_message_by_signature(signature: str, request: Request, encoding: str | None = Query(None)) -> JSONResponse:
+    """Proxy for get_chat_message_by_signature tool."""
+    limited = await _enforce_rate_limit("get_chat_message_by_signature")
+    if limited:
+        return limited
+    result = await get_chat_message_by_signature(signature=signature, encoding=encoding)
+    request_id = getattr(request.state, "request_id", None)
+    _log_tool_result("get_chat_message_by_signature", result if isinstance(result, dict) else {}, request_id)
+    return JSONResponse(content=result)
+
+
+@app.get("/tools/chat/active/{address}")
+async def active_chats(
+    address: str,
+    request: Request,
+    encoding: str | None = Query(None),
+    haschatreference: bool | None = Query(None),
+) -> JSONResponse:
+    """Proxy for get_active_chats tool."""
+    limited = await _enforce_rate_limit("get_active_chats")
+    if limited:
+        return limited
+    result = await get_active_chats(
+        address=address,
+        encoding=encoding,
+        has_chat_reference=haschatreference,
+    )
+    request_id = getattr(request.state, "request_id", None)
+    _log_tool_result("get_active_chats", result if isinstance(result, dict) else {}, request_id)
     return JSONResponse(content=result)
 
 

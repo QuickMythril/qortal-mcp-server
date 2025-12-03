@@ -15,6 +15,7 @@ for information such as:
 - Cross‑chain Trade Portal offers
 - QDN (Qortal Data Network) search metadata
 - Group metadata (group listings, membership, invites/requests/bans)
+- Chat history metadata (messages, counts, active chats)
 
 All write / state‑changing operations are permanently out of scope.
 
@@ -28,6 +29,8 @@ This project is in early development.
     `get_names_by_address`, `get_primary_name`, `search_names`, `list_names`, `list_names_for_sale`
   - Trades: `list_trade_offers` (AT address returned as `tradeAddress`)
   - QDN: `search_qdn` (metadata only; name/identifier included when present)
+  - Chat: `get_chat_messages`, `count_chat_messages`, `get_chat_message_by_signature`,
+    `get_active_chats`
   - Groups: `list_groups`, `get_groups_by_owner`, `get_groups_by_member`, `get_group`,
     `get_group_members`, `get_group_invites_by_address`, `get_group_invites_by_group`,
     `get_group_join_requests`, `get_group_bans`
@@ -166,6 +169,9 @@ curl "http://localhost:8000/tools/groups?limit=5"
 # Group detail + members
 curl "http://localhost:8000/tools/group/1"
 curl "http://localhost:8000/tools/group/1/members?limit=10"
+
+# Chat (messages between two addresses)
+curl "http://localhost:8000/tools/chat/messages?involving=Qaddress1&involving=Qaddress2&limit=5"
 ```
 
 ## MCP integration (initialize + tools)

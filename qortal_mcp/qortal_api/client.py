@@ -668,6 +668,120 @@ class QortalApiClient:
             params["reverse"] = reverse
         return await self._request("/arbitrary/search", params=params, expect_dict=False)
 
+    async def fetch_chat_messages(
+        self,
+        *,
+        before: Optional[int] = None,
+        after: Optional[int] = None,
+        tx_group_id: Optional[int] = None,
+        involving: Optional[List[str]] = None,
+        reference: Optional[str] = None,
+        chat_reference: Optional[str] = None,
+        has_chat_reference: Optional[bool] = None,
+        sender: Optional[str] = None,
+        encoding: Optional[str] = None,
+        limit: Optional[int] = None,
+        offset: Optional[int] = None,
+        reverse: Optional[bool] = None,
+    ) -> Any:
+        """Search chat messages."""
+        params: Dict[str, Any] = {}
+        if before is not None:
+            params["before"] = before
+        if after is not None:
+            params["after"] = after
+        if tx_group_id is not None:
+            params["txGroupId"] = tx_group_id
+        if involving:
+            params["involving"] = involving
+        if reference:
+            params["reference"] = reference
+        if chat_reference:
+            params["chatreference"] = chat_reference
+        if has_chat_reference is not None:
+            params["haschatreference"] = has_chat_reference
+        if sender:
+            params["sender"] = sender
+        if encoding:
+            params["encoding"] = encoding
+        if limit is not None:
+            params["limit"] = limit
+        if offset is not None:
+            params["offset"] = offset
+        if reverse is not None:
+            params["reverse"] = reverse
+        return await self._request("/chat/messages", params=params or None, expect_dict=False)
+
+    async def count_chat_messages(
+        self,
+        *,
+        before: Optional[int] = None,
+        after: Optional[int] = None,
+        tx_group_id: Optional[int] = None,
+        involving: Optional[List[str]] = None,
+        reference: Optional[str] = None,
+        chat_reference: Optional[str] = None,
+        has_chat_reference: Optional[bool] = None,
+        sender: Optional[str] = None,
+        encoding: Optional[str] = None,
+        limit: Optional[int] = None,
+        offset: Optional[int] = None,
+        reverse: Optional[bool] = None,
+    ) -> int:
+        """Count chat messages matching criteria."""
+        params: Dict[str, Any] = {}
+        if before is not None:
+            params["before"] = before
+        if after is not None:
+            params["after"] = after
+        if tx_group_id is not None:
+            params["txGroupId"] = tx_group_id
+        if involving:
+            params["involving"] = involving
+        if reference:
+            params["reference"] = reference
+        if chat_reference:
+            params["chatreference"] = chat_reference
+        if has_chat_reference is not None:
+            params["haschatreference"] = has_chat_reference
+        if sender:
+            params["sender"] = sender
+        if encoding:
+            params["encoding"] = encoding
+        if limit is not None:
+            params["limit"] = limit
+        if offset is not None:
+            params["offset"] = offset
+        if reverse is not None:
+            params["reverse"] = reverse
+        text_response = await self._request(
+            "/chat/messages/count", params=params or None, expect_json=False, expect_dict=False
+        )
+        try:
+            return int(str(text_response).strip())
+        except (TypeError, ValueError):
+            raise QortalApiError("Unexpected response from node.")
+
+    async def fetch_chat_message(self, signature: str, *, encoding: Optional[str] = None) -> Any:
+        """Fetch a single chat message by signature."""
+        encoded = quote(signature, safe="")
+        params: Dict[str, Any] = {}
+        if encoding:
+            params["encoding"] = encoding
+        return await self._request(f"/chat/message/{encoded}", params=params or None)
+
+    async def fetch_active_chats(
+        self, address: str, *, encoding: Optional[str] = None, has_chat_reference: Optional[bool] = None
+    ) -> Any:
+        """Fetch active chats for an address."""
+        encoded = quote(address, safe="")
+        params: Dict[str, Any] = {}
+        if encoding:
+            params["encoding"] = encoding
+        if has_chat_reference is not None:
+            params["haschatreference"] = has_chat_reference
+        return await self._request(f"/chat/active/{encoded}", params=params or None)
+
     async def fetch_groups(
         self, *, limit: Optional[int] = None, offset: Optional[int] = None, reverse: Optional[bool] = None
     ) -> Any:

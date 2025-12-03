@@ -8,6 +8,7 @@ from typing import Optional
 
 # Qortal addresses are Base58, 34 characters, prefixed with "Q".
 ADDRESS_REGEX = re.compile(r"^Q[1-9A-HJ-NP-Za-km-z]{33}$")
+BASE58_REGEX = re.compile(r"^[1-9A-HJ-NP-Za-km-z]+$")
 
 NAME_MIN_LENGTH = 3
 NAME_MAX_LENGTH = 40
@@ -53,3 +54,17 @@ def clamp_limit(value: Optional[int], *, default: int, max_value: int) -> int:
     if parsed < 0:
         return default
     return min(parsed, max_value)
+
+
+def is_base58_string(value: Optional[str], *, min_length: int = 1, max_length: Optional[int] = None) -> bool:
+    """Validate a Base58 string using a simple character check and length bounds."""
+    if not value or not isinstance(value, str):
+        return False
+    if not BASE58_REGEX.fullmatch(value):
+        return False
+    length = len(value)
+    if length < min_length:
+        return False
+    if max_length is not None and length > max_length:
+        return False
+    return True

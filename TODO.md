@@ -11,7 +11,6 @@ Use this as the working checklist. Completed items should be removed when done.
 - None open.
 
 ## Planned additions (medium priority)
-- Chat (read-only): add `/chat/messages`, `/chat/messages/count`, `/chat/message/{signature}`, `/chat/active/{address}` tools with validation (txGroupId XOR two addresses, timestamp floor), safe limits, and data truncation; document outputs and add tests for validation/error mapping.
 - Crosschain: consider exposing `/crosschain/tradeoffers/hidden` (read-only) with safe limits/validation.
 - Address/admin utilities (read-only): decide whether to add `/addresses/lastreference/{address}`, `/addresses/validate/{address}`, `/addresses/online`, `/addresses/online/levels`, `/addresses/publickey/{address}`, `/addresses/convert/{publickey}`; optional admin reads `/admin/settings`, `/admin/settings/{setting}`, `/admin/summary/alltime`, `/admin/enginestats`, `/admin/mintingaccounts` with proper validation and API key handling.
 

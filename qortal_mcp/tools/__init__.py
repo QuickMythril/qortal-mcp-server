@@ -52,6 +52,12 @@ from .groups import (
     get_group_join_requests,
     get_group_bans,
 )
+from .chat import (
+    get_chat_messages,
+    count_chat_messages,
+    get_chat_message_by_signature,
+    get_active_chats,
+)
 from . import validators
 
 __all__ = [
@@ -102,5 +108,9 @@ __all__ = [
     "get_group_invites_by_group",
     "get_group_join_requests",
     "get_group_bans",
+    "get_chat_messages",
+    "count_chat_messages",
+    "get_chat_message_by_signature",
+    "get_active_chats",
     "validators",
 ]

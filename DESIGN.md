@@ -365,7 +365,7 @@ status. fileciteturn0file0
 
 ### 3.5 Chat tools
 
-#### `get_chat_messages` (planned)
+#### `get_chat_messages` (v1)
 
 **Purpose** – Retrieve chat history with strict criteria and truncation for safety.
 
@@ -409,19 +409,19 @@ Notes:
 - Large `data` fields are truncated to an internal cap to avoid oversized responses; binary attachments are not decoded.
 - Only metadata is returned; no decryption or content interpretation is performed.
 
-#### `count_chat_messages` (planned)
+#### `count_chat_messages` (v1)
 
 Same filters as `get_chat_messages`; returns an integer count. Useful for pagination without fetching all data.
 
 **Qortal endpoint** – `GET /chat/messages/count`
 
-#### `get_chat_message_by_signature` (planned)
+#### `get_chat_message_by_signature` (v1)
 
 Fetch a single chat message by transaction signature, optionally selecting `encoding`.
 
 **Qortal endpoint** – `GET /chat/message/{signature}`
 
-#### `get_active_chats` (planned)
+#### `get_active_chats` (v1)
 
 Summarize recent group and direct chats involving an address (metadata/last message preview only).
 
@@ -437,7 +437,7 @@ Summarize recent group and direct chats involving an address (metadata/last mess
 
 ### 3.6 Group tools
 
-#### `list_groups` (planned)
+#### `list_groups` (v1)
 
 **Purpose** – List groups with member counts.
 
@@ -462,7 +462,7 @@ Summarize recent group and direct chats involving an address (metadata/last mess
 
 **Qortal endpoint** – `GET /groups`
 
-#### `get_groups_by_owner` (planned)
+#### `get_groups_by_owner` (v1)
 
 List groups owned by an address.
 
@@ -470,7 +470,7 @@ List groups owned by an address.
 
 **Qortal endpoint** – `GET /groups/owner/{address}`
 
-#### `get_groups_by_member` (planned)
+#### `get_groups_by_member` (v1)
 
 List groups where an address is a member.
 
@@ -478,7 +478,7 @@ List groups where an address is a member.
 
 **Qortal endpoint** – `GET /groups/member/{address}`
 
-#### `get_group` (planned)
+#### `get_group` (v1)
 
 Fetch a single group by id; map GROUP_UNKNOWN (1101/404) to “Group not found.”
 
@@ -486,7 +486,7 @@ Fetch a single group by id; map GROUP_UNKNOWN (1101/404) to “Group not found.�
 
 **Qortal endpoint** – `GET /groups/{groupid}`
 
-#### `get_group_members` (planned)
+#### `get_group_members` (v1)
 
 List members (optionally admins only) with join timestamps.
 
@@ -510,7 +510,7 @@ List members (optionally admins only) with join timestamps.
 
 **Qortal endpoint** – `GET /groups/members/{groupid}`
 
-#### `get_group_invites_by_address` (planned)
+#### `get_group_invites_by_address` (v1)
 
 Pending invites for an address; Core is unpaged, so trim to a configured max (e.g., 100).
 
@@ -518,7 +518,7 @@ Pending invites for an address; Core is unpaged, so trim to a configured max (e.
 
 **Qortal endpoint** – `GET /groups/invites/{address}`
 
-#### `get_group_invites_by_group` (planned)
+#### `get_group_invites_by_group` (v1)
 
 Pending invites for a group; Core is unpaged, so trim to a configured max (e.g., 100).
 
@@ -526,7 +526,7 @@ Pending invites for a group; Core is unpaged, so trim to a configured max (e.g.,
 
 **Qortal endpoint** – `GET /groups/invites/group/{groupid}`
 
-#### `get_group_join_requests` (planned)
+#### `get_group_join_requests` (v1)
 
 Pending join requests for a group; trim to a configured max (e.g., 100).
 
@@ -534,7 +534,7 @@ Pending join requests for a group; trim to a configured max (e.g., 100).
 
 **Qortal endpoint** – `GET /groups/joinrequests/{groupid}`
 
-#### `get_group_bans` (planned)
+#### `get_group_bans` (v1)
 
 Current bans for a group; trim to a configured max (e.g., 100).
 
