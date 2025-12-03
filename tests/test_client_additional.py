@@ -201,3 +201,19 @@ async def test_node_status_unexpected_shape():
     client = QortalApiClient(async_client=mock)
     with pytest.raises(QortalApiError):
         await client.fetch_node_status()
+
+
+@pytest.mark.asyncio
+async def test_request_unauthorized_status_code():
+    mock = MockAsyncClient([MockResponse(401, {"error": "UNAUTHORIZED"})])
+    client = QortalApiClient(async_client=mock)
+    with pytest.raises(UnauthorizedError):
+        await client.fetch_node_status()
+
+
+@pytest.mark.asyncio
+async def test_search_qdn_unexpected_response():
+    mock = MockAsyncClient([MockResponse(200, json_body="not-a-list")])
+    client = QortalApiClient(async_client=mock)
+    result = await client.search_qdn(limit=1)
+    assert result == "not-a-list"

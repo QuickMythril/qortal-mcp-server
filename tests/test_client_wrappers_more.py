@@ -49,6 +49,7 @@ async def test_wrapper_methods_success_paths():
         MockResponse(200, json_body=[{"groupId": 1}]),  # fetch_groups
         MockResponse(200, json_body=None, text_body="42"),  # fetch_block_height_by_signature
         MockResponse(404, json_body={"error": "BLOCK_UNKNOWN"}),  # fetch_block_by_signature
+        MockResponse(200, json_body=[{"groupId": 2}]),  # fetch_groups_by_owner
     ]
     mac = MockAsyncClient(responses)
     client = QortalApiClient(async_client=mac)
@@ -71,3 +72,4 @@ async def test_wrapper_methods_success_paths():
     assert await client.fetch_block_height_by_signature("s" * 44) == 42
     with pytest.raises(Exception):
         await client.fetch_block_by_signature("s" * 44)
+    assert await client.fetch_groups_by_owner("Q" * 34) == [{"groupId": 2}]

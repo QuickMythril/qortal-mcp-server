@@ -81,6 +81,17 @@ async def test_list_transactions_by_address_unauthorized():
 
 
 @pytest.mark.asyncio
+async def test_list_transactions_by_creator_unexpected_response():
+    class UnexpectedClient:
+        async def fetch_transactions_by_creator(self, *args, **kwargs):
+            return {"not": "list"}
+
+    assert await list_transactions_by_creator(
+        public_key="A" * 44, confirmation_status="CONFIRMED", client=UnexpectedClient()
+    ) == {"error": "Unexpected response from node."}
+
+
+@pytest.mark.asyncio
 async def test_list_transactions_by_creator_error():
     class FailClient:
         async def fetch_transactions_by_creator(self, public_key: str, **kwargs):

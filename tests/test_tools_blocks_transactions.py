@@ -119,6 +119,16 @@ async def test_block_at_timestamp_success():
 
 
 @pytest.mark.asyncio
+async def test_block_at_timestamp_unexpected_response():
+    class StubClient:
+        async def fetch_block_at_timestamp(self, ts):
+            raise QortalApiError("oops")
+
+    result = await get_block_at_timestamp(5, client=StubClient())
+    assert result == {"error": "Qortal API error."}
+
+
+@pytest.mark.asyncio
 async def test_list_block_range_success():
     captured = {}
 

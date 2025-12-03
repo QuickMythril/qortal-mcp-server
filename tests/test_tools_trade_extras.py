@@ -54,6 +54,24 @@ async def test_list_trade_offers_unexpected_response():
 
 
 @pytest.mark.asyncio
+async def test_list_trade_offers_unauthorized():
+    class UnauthorizedClient:
+        async def fetch_trade_offers(self, **kwargs):
+            raise UnauthorizedError("nope")
+
+    assert await list_trade_offers(client=UnauthorizedClient()) == {"error": "Unauthorized or API key required."}
+
+
+@pytest.mark.asyncio
+async def test_get_trade_detail_unexpected_response():
+    class StubClient:
+        async def fetch_trade_detail(self, at_address):
+            return ["not", "dict"]
+
+    assert await get_trade_detail(at_address="A" * 34, client=StubClient()) == {"error": "Unexpected response from node."}
+
+
+@pytest.mark.asyncio
 async def test_get_trade_ledger_validation_and_errors():
     result = await get_trade_ledger(public_key="")
     assert result == {"error": "Public key is required."}
