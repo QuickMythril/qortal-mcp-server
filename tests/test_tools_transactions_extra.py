@@ -92,6 +92,13 @@ async def test_list_transactions_by_creator_unexpected_response():
 
 
 @pytest.mark.asyncio
+async def test_list_transactions_by_creator_invalid_status():
+    assert await list_transactions_by_creator(public_key="A" * 44, confirmation_status="MAYBE") == {
+        "error": "Invalid confirmation status."
+    }
+
+
+@pytest.mark.asyncio
 async def test_list_transactions_by_creator_error():
     class FailClient:
         async def fetch_transactions_by_creator(self, public_key: str, **kwargs):

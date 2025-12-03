@@ -148,6 +148,9 @@ def test_group_and_trade_routes(monkeypatch, client):
     async def active_chats(address, **kwargs):
         return {"direct": [{"address": address}]}
 
+    async def qdn_search(**kwargs):
+        return [{"name": "item"}]
+
     async def no_limit(_tool):
         return None
 
@@ -157,9 +160,11 @@ def test_group_and_trade_routes(monkeypatch, client):
     monkeypatch.setattr(server, "list_hidden_trade_offers", hidden_offers)
     monkeypatch.setattr(server, "get_chat_message_by_signature", chat_message)
     monkeypatch.setattr(server, "get_active_chats", active_chats)
+    monkeypatch.setattr(server, "search_qdn", qdn_search)
 
     assert client.get("/tools/group/1/members").json()[0]["group"] == 1
     assert client.get("/tools/group_invites/address/Q" + "1" * 33).json()[0]["groupId"] == 1
     assert client.get("/tools/hidden_trade_offers").json()[0]["tradeAddress"] == "A1"
     assert client.get("/tools/chat/message/sig123").json()["signature"] == "sig123"
     assert client.get("/tools/chat/active/Q" + "1" * 33).json()["direct"][0]["address"].startswith("Q")
+    assert client.get("/tools/qdn_search").json()[0]["name"] == "item"

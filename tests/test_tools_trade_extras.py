@@ -42,6 +42,8 @@ async def test_get_trade_price_validation_and_errors():
 
     assert await get_trade_price(blockchain="BITCOIN", client=UnauthorizedClient()) == {"error": "Unauthorized or API key required."}
 
+    assert await get_trade_price(blockchain="BITCOIN", max_trades="bad") == {"error": "Invalid maxtrades."}
+
 
 @pytest.mark.asyncio
 async def test_list_trade_offers_unexpected_response():

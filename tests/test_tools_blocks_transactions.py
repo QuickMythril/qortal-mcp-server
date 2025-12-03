@@ -129,6 +129,21 @@ async def test_block_at_timestamp_unexpected_response():
 
 
 @pytest.mark.asyncio
+async def test_get_block_by_height_error_paths():
+    class UnauthorizedClient:
+        async def fetch_block_by_height(self, h):
+            raise UnauthorizedError("nope")
+
+    assert await get_block_by_height(1, client=UnauthorizedClient()) == {"error": "Unauthorized or API key required."}
+
+    class ApiClient:
+        async def fetch_block_by_height(self, h):
+            raise QortalApiError("bad")
+
+    assert await get_block_by_height(1, client=ApiClient()) == {"error": "Qortal API error."}
+
+
+@pytest.mark.asyncio
 async def test_list_block_range_success():
     captured = {}
 
