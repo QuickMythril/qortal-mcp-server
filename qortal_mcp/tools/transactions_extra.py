@@ -163,14 +163,14 @@ async def list_transactions_by_creator(
             confirmation_status=normalized_status,
             reverse=reverse,
         )
-    except QortalApiError as exc:
-        if exc.code in {"INVALID_PUBLIC_KEY"}:
-            return {"error": "Invalid public key."}
-        return {"error": "Qortal API error."}
     except UnauthorizedError:
         return {"error": "Unauthorized or API key required."}
     except NodeUnreachableError:
         return {"error": "Node unreachable"}
+    except QortalApiError as exc:
+        if exc.code in {"INVALID_PUBLIC_KEY"}:
+            return {"error": "Invalid public key."}
+        return {"error": "Qortal API error."}
     except Exception:
         logger.exception("Unexpected error fetching transactions by creator")
         return {"error": "Unexpected error while retrieving transactions."}

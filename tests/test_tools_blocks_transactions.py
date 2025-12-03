@@ -46,15 +46,68 @@ async def test_block_by_height_invalid():
 
 
 @pytest.mark.asyncio
+async def test_block_height_success_and_api_error():
+    class StubClient:
+        async def fetch_block_height(self):
+            return 7
+
+    assert await get_block_height(client=StubClient()) == {"height": 7}
+
+    class ApiClient:
+        async def fetch_block_height(self):
+            raise QortalApiError("fail")
+
+    assert await get_block_height(client=ApiClient()) == {"error": "Qortal API error."}
+
+
+@pytest.mark.asyncio
 async def test_block_summaries_invalid_params():
     assert await list_block_summaries(start="a", end=1) == {"error": "Invalid start or end height."}
     assert await list_block_summaries(start=1, end="b") == {"error": "Invalid start or end height."}
 
 
 @pytest.mark.asyncio
+async def test_block_summaries_success_and_unexpected():
+    class StubClient:
+        async def fetch_block_summaries(self, **kwargs):
+            return [{"height": kwargs["start"]}]
+
+    result = await list_block_summaries(start=1, end=2, client=StubClient())
+    assert result == [{"height": 1}]
+
+    class UnexpectedClient:
+        async def fetch_block_summaries(self, **kwargs):
+            return {"not": "list"}
+
+    assert await list_block_summaries(start=1, end=2, client=UnexpectedClient()) == {"error": "Unexpected response from node."}
+
+
+@pytest.mark.asyncio
 async def test_block_range_invalid():
     assert await list_block_range(height="x", count=1) == {"error": "Invalid height."}
     assert await list_block_range(height=1, count="x") == {"error": "Invalid count."}
+
+
+@pytest.mark.asyncio
+async def test_block_range_success_and_unauthorized():
+    captured = {}
+
+    class StubClient:
+        async def fetch_block_range(self, **kwargs):
+            captured.update(kwargs)
+            return [{"height": 1}, {"height": 2}, {"height": 3}, {"height": 4}]
+
+    cfg = QortalConfig(default_block_range=2, max_block_range=3)
+    result = await list_block_range(height=5, count=10, reverse=True, include_online_signatures=False, client=StubClient(), config=cfg)
+    assert captured["reverse"] is True
+    assert captured["include_online_signatures"] is False
+    assert len(result) == 3
+
+    class UnauthorizedClient:
+        async def fetch_block_range(self, **kwargs):
+            raise UnauthorizedError("nope")
+
+    assert await list_block_range(height=1, count=1, client=UnauthorizedClient()) == {"error": "Unauthorized or API key required."}
 
 
 @pytest.mark.asyncio

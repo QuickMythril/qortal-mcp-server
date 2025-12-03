@@ -51,3 +51,37 @@ async def test_list_transactions_by_creator_error():
     assert await list_transactions_by_creator(
         public_key="A" * 44, confirmation_status="CONFIRMED", client=FailClient()
     ) == {"error": "Qortal API error."}
+
+
+@pytest.mark.asyncio
+async def test_list_transactions_by_address_success_and_unexpected():
+    captured = {}
+
+    class StubClient:
+        async def fetch_transactions_by_address(self, address: str, **kwargs):
+            captured["address"] = address
+            captured.update(kwargs)
+            return [{"signature": "s"}]
+
+    result = await list_transactions_by_address(
+        address="Q" * 34, limit=5, offset=1, confirmation_status="CONFIRMED", reverse=True, client=StubClient()
+    )
+    assert captured["limit"] == 5
+    assert result == [{"signature": "s"}]
+
+    class UnexpectedClient:
+        async def fetch_transactions_by_address(self, *args, **kwargs):
+            return "not-a-list"
+
+    assert await list_transactions_by_address(address="Q" * 34, client=UnexpectedClient()) == {"error": "Unexpected response from node."}
+
+
+@pytest.mark.asyncio
+async def test_list_transactions_by_creator_unreachable():
+    class FailClient:
+        async def fetch_transactions_by_creator(self, *args, **kwargs):
+            raise NodeUnreachableError("down")
+
+    assert await list_transactions_by_creator(
+        public_key="A" * 44, confirmation_status="CONFIRMED", client=FailClient()
+    ) == {"error": "Node unreachable"}

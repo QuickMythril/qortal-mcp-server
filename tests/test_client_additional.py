@@ -104,3 +104,41 @@ async def test_client_invalid_data_error():
     client = QortalApiClient(async_client=mock)
     with pytest.raises(QortalApiError):
         await client.fetch_node_info()
+
+
+@pytest.mark.asyncio
+async def test_client_group_unknown_and_public_key_error():
+    mock = MockAsyncClient([MockResponse(404, {"error": "GROUP_UNKNOWN"})])
+    client = QortalApiClient(async_client=mock)
+    with pytest.raises(QortalApiError) as excinfo:
+        await client.fetch_group(1)
+    assert "Group not found." in str(excinfo.value)
+
+    mock = MockAsyncClient([MockResponse(400, {"error": "INVALID_PUBLIC_KEY"})])
+    client = QortalApiClient(async_client=mock)
+    with pytest.raises(QortalApiError) as excinfo:
+        await client.fetch_transactions_by_creator(public_key="bad")
+    assert "Invalid public key." in str(excinfo.value)
+
+
+@pytest.mark.asyncio
+async def test_client_resource_not_found_default():
+    mock = MockAsyncClient([MockResponse(404, {"error": "whatever"})])
+    client = QortalApiClient(async_client=mock)
+    with pytest.raises(QortalApiError) as excinfo:
+        await client.fetch_name_info("missing")
+    assert "Resource not found." in str(excinfo.value)
+
+
+@pytest.mark.asyncio
+async def test_block_height_by_signature_unexpected_response():
+    class StubClient:
+        async def get(self, *args, **kwargs):
+            return MockResponse(200, json_body=None, text_body="not-an-int")
+
+        async def aclose(self):
+            return None
+
+    client = QortalApiClient(async_client=StubClient())
+    with pytest.raises(QortalApiError):
+        await client.fetch_block_height_by_signature("s" * 44)
