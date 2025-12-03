@@ -8,7 +8,7 @@ tool layer can turn into safe, user-facing messages.
 from __future__ import annotations
 
 import logging
-from typing import Any, Dict, Optional
+from typing import Any, Dict, List, Optional
 from urllib.parse import quote
 
 import httpx
@@ -43,6 +43,10 @@ class AddressNotFoundError(QortalApiError):
 
 class NameNotFoundError(QortalApiError):
     """Raised when a name is not registered."""
+
+
+class GroupNotFoundError(QortalApiError):
+    """Raised when a group does not exist."""
 
 
 class UnauthorizedError(QortalApiError):
@@ -129,6 +133,11 @@ class QortalApiClient:
                 "Address not found on chain.",
                 code=normalized or message_upper or None,
                 status_code=status_code,
+            )
+        group_unknown_signals = {"GROUP_UNKNOWN", "1101"}
+        if signals.intersection(group_unknown_signals):
+            return GroupNotFoundError(
+                "Group not found.", code=normalized or message_upper or None, status_code=status_code
             )
         invalid_public_key_signals = {"INVALID_PUBLIC_KEY"}
         if signals.intersection(invalid_public_key_signals) or "invalid public key" in lowered_message:
@@ -658,6 +667,71 @@ class QortalApiClient:
         if reverse is not None:
             params["reverse"] = reverse
         return await self._request("/arbitrary/search", params=params, expect_dict=False)
+
+    async def fetch_groups(
+        self, *, limit: Optional[int] = None, offset: Optional[int] = None, reverse: Optional[bool] = None
+    ) -> Any:
+        """List groups with optional paging."""
+        params: Dict[str, Any] = {}
+        if limit is not None:
+            params["limit"] = limit
+        if offset is not None:
+            params["offset"] = offset
+        if reverse is not None:
+            params["reverse"] = reverse
+        return await self._request("/groups", params=params or None, expect_dict=False)
+
+    async def fetch_groups_by_owner(self, address: str) -> Any:
+        """List groups owned by address."""
+        encoded = quote(address, safe="")
+        return await self._request(f"/groups/owner/{encoded}", expect_dict=False)
+
+    async def fetch_groups_by_member(self, address: str) -> Any:
+        """List groups where address is a member."""
+        encoded = quote(address, safe="")
+        return await self._request(f"/groups/member/{encoded}", expect_dict=False)
+
+    async def fetch_group(self, group_id: int) -> Any:
+        """Fetch group details by id."""
+        return await self._request(f"/groups/{group_id}")
+
+    async def fetch_group_members(
+        self,
+        group_id: int,
+        *,
+        only_admins: Optional[bool] = None,
+        limit: Optional[int] = None,
+        offset: Optional[int] = None,
+        reverse: Optional[bool] = None,
+    ) -> Any:
+        """Fetch group members (optionally admins only)."""
+        params: Dict[str, Any] = {}
+        if only_admins is not None:
+            params["onlyAdmins"] = only_admins
+        if limit is not None:
+            params["limit"] = limit
+        if offset is not None:
+            params["offset"] = offset
+        if reverse is not None:
+            params["reverse"] = reverse
+        return await self._request(f"/groups/members/{group_id}", params=params or None)
+
+    async def fetch_group_invites_by_address(self, address: str) -> Any:
+        """List pending invites for an address."""
+        encoded = quote(address, safe="")
+        return await self._request(f"/groups/invites/{encoded}", expect_dict=False)
+
+    async def fetch_group_invites_by_group(self, group_id: int) -> Any:
+        """List pending invites for a group."""
+        return await self._request(f"/groups/invites/group/{group_id}", expect_dict=False)
+
+    async def fetch_group_join_requests(self, group_id: int) -> Any:
+        """List join requests for a group."""
+        return await self._request(f"/groups/joinrequests/{group_id}", expect_dict=False)
+
+    async def fetch_group_bans(self, group_id: int) -> Any:
+        """List bans for a group."""
+        return await self._request(f"/groups/bans/{group_id}", expect_dict=False)
 
 
 default_client = QortalApiClient()

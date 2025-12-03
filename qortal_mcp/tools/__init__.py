@@ -41,6 +41,17 @@ from .transactions_extra import (
     list_transactions_by_address,
     list_transactions_by_creator,
 )
+from .groups import (
+    list_groups,
+    get_groups_by_owner,
+    get_groups_by_member,
+    get_group,
+    get_group_members,
+    get_group_invites_by_address,
+    get_group_invites_by_group,
+    get_group_join_requests,
+    get_group_bans,
+)
 from . import validators
 
 __all__ = [
@@ -82,5 +93,14 @@ __all__ = [
     "list_transactions_by_block",
     "list_transactions_by_address",
     "list_transactions_by_creator",
+    "list_groups",
+    "get_groups_by_owner",
+    "get_groups_by_member",
+    "get_group",
+    "get_group_members",
+    "get_group_invites_by_address",
+    "get_group_invites_by_group",
+    "get_group_join_requests",
+    "get_group_bans",
     "validators",
 ]

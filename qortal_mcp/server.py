@@ -33,6 +33,15 @@ from qortal_mcp.tools import (
     list_trade_offers,
     search_qdn,
     validate_address,
+    list_groups,
+    get_groups_by_owner,
+    get_groups_by_member,
+    get_group,
+    get_group_members,
+    get_group_invites_by_address,
+    get_group_invites_by_group,
+    get_group_join_requests,
+    get_group_bans,
 )
 
 logger = logging.getLogger(__name__)
@@ -332,6 +341,128 @@ async def trade_offers(request: Request, limit: int | None = Query(None, ge=0)) 
     result = await list_trade_offers(limit=limit)
     request_id = getattr(request.state, "request_id", None)
     _log_tool_result("list_trade_offers", result if isinstance(result, dict) else {}, request_id)
+    return JSONResponse(content=result)
+
+
+@app.get("/tools/groups")
+async def groups_route(
+    request: Request,
+    limit: int | None = Query(None, ge=0),
+    offset: int | None = Query(None, ge=0),
+    reverse: bool | None = Query(None),
+) -> JSONResponse:
+    """Proxy for list_groups tool."""
+    limited = await _enforce_rate_limit("list_groups")
+    if limited:
+        return limited
+    result = await list_groups(limit=limit, offset=offset, reverse=reverse)
+    request_id = getattr(request.state, "request_id", None)
+    _log_tool_result("list_groups", result if isinstance(result, dict) else {}, request_id)
+    return JSONResponse(content=result)
+
+
+@app.get("/tools/groups/owner/{address}")
+async def groups_by_owner(address: str, request: Request) -> JSONResponse:
+    """Proxy for get_groups_by_owner tool."""
+    limited = await _enforce_rate_limit("get_groups_by_owner")
+    if limited:
+        return limited
+    result = await get_groups_by_owner(address=address)
+    request_id = getattr(request.state, "request_id", None)
+    _log_tool_result("get_groups_by_owner", result if isinstance(result, dict) else {}, request_id)
+    return JSONResponse(content=result)
+
+
+@app.get("/tools/groups/member/{address}")
+async def groups_by_member(address: str, request: Request) -> JSONResponse:
+    """Proxy for get_groups_by_member tool."""
+    limited = await _enforce_rate_limit("get_groups_by_member")
+    if limited:
+        return limited
+    result = await get_groups_by_member(address=address)
+    request_id = getattr(request.state, "request_id", None)
+    _log_tool_result("get_groups_by_member", result if isinstance(result, dict) else {}, request_id)
+    return JSONResponse(content=result)
+
+
+@app.get("/tools/group/{group_id}")
+async def group_detail(group_id: int, request: Request) -> JSONResponse:
+    """Proxy for get_group tool."""
+    limited = await _enforce_rate_limit("get_group")
+    if limited:
+        return limited
+    result = await get_group(group_id=group_id)
+    request_id = getattr(request.state, "request_id", None)
+    _log_tool_result("get_group", result if isinstance(result, dict) else {}, request_id)
+    return JSONResponse(content=result)
+
+
+@app.get("/tools/group/{group_id}/members")
+async def group_members(
+    group_id: int,
+    request: Request,
+    onlyAdmins: bool | None = Query(None),
+    limit: int | None = Query(None, ge=0),
+    offset: int | None = Query(None, ge=0),
+    reverse: bool | None = Query(None),
+) -> JSONResponse:
+    """Proxy for get_group_members tool."""
+    limited = await _enforce_rate_limit("get_group_members")
+    if limited:
+        return limited
+    result = await get_group_members(
+        group_id=group_id, only_admins=onlyAdmins, limit=limit, offset=offset, reverse=reverse
+    )
+    request_id = getattr(request.state, "request_id", None)
+    _log_tool_result("get_group_members", result if isinstance(result, dict) else {}, request_id)
+    return JSONResponse(content=result)
+
+
+@app.get("/tools/group_invites/address/{address}")
+async def group_invites_by_address(address: str, request: Request) -> JSONResponse:
+    """Proxy for get_group_invites_by_address tool."""
+    limited = await _enforce_rate_limit("get_group_invites_by_address")
+    if limited:
+        return limited
+    result = await get_group_invites_by_address(address=address)
+    request_id = getattr(request.state, "request_id", None)
+    _log_tool_result("get_group_invites_by_address", result if isinstance(result, dict) else {}, request_id)
+    return JSONResponse(content=result)
+
+
+@app.get("/tools/group/{group_id}/invites")
+async def group_invites_by_group(group_id: int, request: Request) -> JSONResponse:
+    """Proxy for get_group_invites_by_group tool."""
+    limited = await _enforce_rate_limit("get_group_invites_by_group")
+    if limited:
+        return limited
+    result = await get_group_invites_by_group(group_id=group_id)
+    request_id = getattr(request.state, "request_id", None)
+    _log_tool_result("get_group_invites_by_group", result if isinstance(result, dict) else {}, request_id)
+    return JSONResponse(content=result)
+
+
+@app.get("/tools/group/{group_id}/join_requests")
+async def group_join_requests(group_id: int, request: Request) -> JSONResponse:
+    """Proxy for get_group_join_requests tool."""
+    limited = await _enforce_rate_limit("get_group_join_requests")
+    if limited:
+        return limited
+    result = await get_group_join_requests(group_id=group_id)
+    request_id = getattr(request.state, "request_id", None)
+    _log_tool_result("get_group_join_requests", result if isinstance(result, dict) else {}, request_id)
+    return JSONResponse(content=result)
+
+
+@app.get("/tools/group/{group_id}/bans")
+async def group_bans(group_id: int, request: Request) -> JSONResponse:
+    """Proxy for get_group_bans tool."""
+    limited = await _enforce_rate_limit("get_group_bans")
+    if limited:
+        return limited
+    result = await get_group_bans(group_id=group_id)
+    request_id = getattr(request.state, "request_id", None)
+    _log_tool_result("get_group_bans", result if isinstance(result, dict) else {}, request_id)
     return JSONResponse(content=result)
 
 

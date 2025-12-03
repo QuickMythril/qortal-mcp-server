@@ -2,6 +2,7 @@ import pytest
 
 from qortal_mcp.qortal_api.client import (
     AddressNotFoundError,
+    GroupNotFoundError,
     InvalidAddressError,
     NameNotFoundError,
     NodeUnreachableError,
@@ -58,6 +59,14 @@ async def test_name_not_found_mapping():
     client = QortalApiClient(async_client=mock)
     with pytest.raises(NameNotFoundError):
         await client.fetch_name_info("missing")
+
+
+@pytest.mark.asyncio
+async def test_group_not_found_mapping():
+    mock = MockAsyncClient([MockResponse(404, {"error": "GROUP_UNKNOWN"})])
+    client = QortalApiClient(async_client=mock)
+    with pytest.raises(GroupNotFoundError):
+        await client.fetch_group(123)
 
 
 @pytest.mark.asyncio

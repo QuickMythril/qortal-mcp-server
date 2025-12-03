@@ -2,6 +2,7 @@
 
 from .client import (
     AddressNotFoundError,
+    GroupNotFoundError,
     InvalidAddressError,
     NameNotFoundError,
     NodeUnreachableError,
@@ -16,6 +17,7 @@ __all__ = [
     "QortalApiError",
     "InvalidAddressError",
     "AddressNotFoundError",
+    "GroupNotFoundError",
     "NameNotFoundError",
     "UnauthorizedError",
     "NodeUnreachableError",
