@@ -636,8 +636,8 @@ These are candidates for later milestones and are not required for v1: fileci
   for modern transactions.
 - QDN publisher field is not returned in `search_qdn` results; include it only after confirming the
   Core payload and privacy implications.
-- Account overview omits `assetBalances` beyond QORT to avoid large payloads; consider a bounded
-  subset in a future iteration.
+- Account overview defaults to QORT-only; bounded `assetBalances` are available only when
+  `include_assets` is explicitly requested (with strict limits).
 
 ---
 
