@@ -1,24 +1,23 @@
-# MCP TODO – API coverage & gaps
+# MCP TODO – active work items only
 
-This list merges the gaps I found and the other CLI agent’s findings. Use it as the working checklist for upcoming fixes.
+Use this as the working checklist. Completed items should be removed when done.
 
-## Parameter gaps in existing tools
-- `/crosschain/tradeoffers`: consider exposing `/crosschain/tradeoffers/hidden` (read-only) if still within safety guidelines.
+## Ongoing upkeep (always in effect)
+- Keep DESIGN/README updated whenever adding or changing endpoints/parameters.
+- Add/update tests alongside code changes (validation, limits, mappings).
+- Document intentional omissions/constraints when deferring endpoints or fields.
 
-## Endpoint coverage not yet implemented (read-only Core surface)
-- Address utilities: Core offers `GET /addresses/lastreference/{address}`, `/addresses/validate/{address}` (server-side), `/addresses/online`, `/addresses/online/levels`, `/addresses/publickey/{address}`, `/addresses/convert/{publickey}`. Decide which to expose (all read-only) and add input validation.
-- Trade portal extras: consider whether to expose hidden offers (`/crosschain/tradeoffers/hidden`) and/or detailed trade info endpoints, with limits.
-- Admin read-only: currently exposing `/admin/status`, `/admin/info`, `/admin/summary`, `/admin/uptime` only. Core also has `/admin/settings`, `/admin/settings/{setting}`, `/admin/summary/alltime` (API key), `/admin/enginestats` (API key), `/admin/mintingaccounts`, etc. Add only the safe, read-only ones; rely on API key checks where required.
+## Bug fixes / correctness (highest priority)
+- None open.
 
-## Housekeeping / docs
-- When adding new endpoints or parameters, update `DESIGN.md` to document the expanded whitelist, validation, and limits.
-- Add/adjust tests for new parameter handling and validation (especially for the new arbitrary/search and crosschain filters, and offset clamping).
+## Planned additions (medium priority)
+- Crosschain: consider exposing `/crosschain/tradeoffers/hidden` (read-only) with safe limits/validation.
+- Address/admin utilities (read-only): decide whether to add `/addresses/lastreference/{address}`, `/addresses/validate/{address}`, `/addresses/online`, `/addresses/online/levels`, `/addresses/publickey/{address}`, `/addresses/convert/{publickey}`; optional admin reads `/admin/settings`, `/admin/settings/{setting}`, `/admin/summary/alltime`, `/admin/enginestats`, `/admin/mintingaccounts` with proper validation and API key handling.
 
-## Optional/Deferred endpoints
-- Address utilities (read-only): `/addresses/lastreference/{address}`, `/addresses/online`, `/addresses/online/levels`, `/addresses/publickey/{address}`, `/addresses/convert/{publickey}`.
-- Admin read-only (optional): `/admin/settings`, `/admin/settings/{setting}`, `/admin/summary/alltime`, `/admin/enginestats`, `/admin/mintingaccounts`.
-- Additional block/tx endpoints currently skipped: `/blocks/signature/{signature}/data`, `/blocks/signature/{signature}/transactions`, `/blocks/child/{signature}`, `/blocks/onlineaccounts/{height}`, `/blocks/signer/{address}`; transaction helpers like unitfee/fee/convert/raw/processing remain out of scope for now.
+## Optional improvements
+- Additional block/tx helpers (read-only): `/blocks/signature/{signature}/data`, `/blocks/signature/{signature}/transactions`, `/blocks/child/{signature}`, `/blocks/onlineaccounts/{height}`, `/blocks/signer/{address}`, and transaction helpers (unitfee/fee/convert/raw/processing) — add only if needed with safe limits.
+- QDN publisher field: confirm Core search payload; if acceptable, include `publisher` in `search_qdn` outputs and update docs, otherwise document the omission.
+- Asset balances roadmap: consider adding a bounded set of `assetBalances` to account overview in a future iteration.
 
-## New tasks from latest review
-- QDN publisher field: confirm Core search payload; if present, include `publisher` in search_qdn outputs and update DESIGN to match (else document intentional omission).
-- Asset balances roadmap: keep TODO to add limited assetBalances to account overview in a future iteration.
+## Blocked / waiting
+- None.
