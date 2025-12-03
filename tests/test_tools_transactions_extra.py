@@ -7,7 +7,7 @@ from qortal_mcp.tools.transactions_extra import (
     list_transactions_by_address,
     list_transactions_by_creator,
 )
-from qortal_mcp.qortal_api import NodeUnreachableError, QortalApiError
+from qortal_mcp.qortal_api import NodeUnreachableError, QortalApiError, UnauthorizedError
 
 
 @pytest.mark.asyncio
@@ -36,10 +36,27 @@ async def test_list_transactions_by_block_validation_and_error():
 
     assert await list_transactions_by_block(signature="s" * 44, client=FailClient()) == {"error": "Qortal API error."}
 
+    class BlockNotFoundClient:
+        async def fetch_transactions_by_block(self, signature: str, **kwargs):
+            raise QortalApiError("missing", code="BLOCK_UNKNOWN")
+
+    assert await list_transactions_by_block(signature="s" * 44, client=BlockNotFoundClient()) == {"error": "Block not found."}
+
 
 @pytest.mark.asyncio
 async def test_list_transactions_by_address_validation():
     assert await list_transactions_by_address(address="bad") == {"error": "Invalid Qortal address."}
+
+
+@pytest.mark.asyncio
+async def test_list_transactions_by_address_unauthorized():
+    class UnauthorizedClient:
+        async def fetch_transactions_by_address(self, address: str, **kwargs):
+            raise UnauthorizedError("nope")
+
+    assert await list_transactions_by_address(address="Q" * 34, client=UnauthorizedClient()) == {
+        "error": "Unauthorized or API key required."
+    }
 
 
 @pytest.mark.asyncio

@@ -35,6 +35,12 @@ async def test_get_trade_price_validation_and_errors():
 
     assert await get_trade_price(blockchain="BITCOIN", client=ApiErrorClient()) == {"error": "Qortal API error."}
 
+    class UnauthorizedClient:
+        async def fetch_trade_price(self, *, blockchain: str, max_trades=None, inverse=None):
+            raise UnauthorizedError("nope")
+
+    assert await get_trade_price(blockchain="BITCOIN", client=UnauthorizedClient()) == {"error": "Unauthorized or API key required."}
+
 
 @pytest.mark.asyncio
 async def test_get_trade_ledger_validation_and_errors():

@@ -47,6 +47,7 @@ async def test_wrapper_methods_success_paths():
         MockResponse(200, json_body={"data": "d"}),  # fetch_chat_message
         MockResponse(200, json_body={"direct": [{"address": "Q" * 34}]}),  # fetch_active_chats
         MockResponse(200, json_body=[{"groupId": 1}]),  # fetch_groups
+        MockResponse(200, json_body=None, text_body="42"),  # fetch_block_height_by_signature
     ]
     mac = MockAsyncClient(responses)
     client = QortalApiClient(async_client=mac)
@@ -66,3 +67,4 @@ async def test_wrapper_methods_success_paths():
     assert await client.fetch_chat_message("sig") == {"data": "d"}
     assert await client.fetch_active_chats("Q" * 34) == {"direct": [{"address": "Q" * 34}]}
     assert await client.fetch_groups() == [{"groupId": 1}]
+    assert await client.fetch_block_height_by_signature("s" * 44) == 42

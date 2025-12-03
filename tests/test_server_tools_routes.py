@@ -53,3 +53,46 @@ def test_qdn_search_route_error(monkeypatch, client):
     resp = client.get("/tools/qdn_search")
     assert resp.status_code == 200
     assert resp.json()["error"] == "Invalid limit."
+
+
+def test_trade_offers_route(monkeypatch, client):
+    async def fake_tool(limit=None, offset=None, reverse=None, foreign_blockchain=None):
+        return [{"tradeAddress": "A1"}]
+
+    async def no_limit(_tool):
+        return None
+
+    monkeypatch.setattr(server, "_enforce_rate_limit", no_limit)
+    monkeypatch.setattr(server, "list_trade_offers", fake_tool)
+    resp = client.get("/tools/trade_offers?limit=2")
+    assert resp.status_code == 200
+    assert resp.json()[0]["tradeAddress"] == "A1"
+
+
+def test_balance_route(monkeypatch, client):
+    async def fake_tool(address, asset_id=0):
+        return {"assetId": asset_id, "address": address}
+
+    async def no_limit(_tool):
+        return None
+
+    monkeypatch.setattr(server, "_enforce_rate_limit", no_limit)
+    monkeypatch.setattr(server, "get_balance", fake_tool)
+    resp = client.get("/tools/balance/Q" + "1" * 33 + "?assetId=5")
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["assetId"] == 5
+
+
+def test_chat_count_route(monkeypatch, client):
+    async def fake_tool(**kwargs):
+        return {"count": 2}
+
+    async def no_limit(_tool):
+        return None
+
+    monkeypatch.setattr(server, "_enforce_rate_limit", no_limit)
+    monkeypatch.setattr(server, "count_chat_messages", fake_tool)
+    resp = client.get("/tools/chat/messages/count?involving=Q" + "1" * 33 + "&involving=Q" + "2" * 33)
+    assert resp.status_code == 200
+    assert resp.json()["count"] == 2

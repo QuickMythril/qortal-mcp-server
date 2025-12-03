@@ -69,6 +69,12 @@ async def test_group_detail_invalid_and_not_found():
 
     assert await get_group(group_id=1, client=StubClient()) == {"error": "Group not found."}
 
+    class UnauthorizedClient:
+        async def fetch_group(self, group_id: int):
+            raise NodeUnreachableError("down")
+
+    assert await get_group(group_id=1, client=UnauthorizedClient()) == {"error": "Node unreachable"}
+
 
 @pytest.mark.asyncio
 async def test_group_members_validation_and_normalization():

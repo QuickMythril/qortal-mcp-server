@@ -53,14 +53,14 @@ async def get_block_height_by_signature(signature: str, *, client=default_client
         return {"error": "Invalid signature."}
     try:
         height = await client.fetch_block_height_by_signature(normalized)
-    except QortalApiError as exc:
-        if exc.code in {"BLOCK_UNKNOWN", "INVALID_SIGNATURE"} or exc.status_code == 404:
-            return {"error": "Block not found."}
-        return {"error": "Qortal API error."}
     except UnauthorizedError:
         return {"error": "Unauthorized or API key required."}
     except NodeUnreachableError:
         return {"error": "Node unreachable"}
+    except QortalApiError as exc:
+        if exc.code in {"BLOCK_UNKNOWN", "INVALID_SIGNATURE"} or exc.status_code == 404:
+            return {"error": "Block not found."}
+        return {"error": "Qortal API error."}
     except Exception:
         logger.exception("Unexpected error fetching block height by signature")
         return {"error": "Unexpected error while retrieving block height."}

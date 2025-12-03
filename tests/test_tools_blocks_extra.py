@@ -36,6 +36,15 @@ async def test_block_height_by_signature_validation():
 
 
 @pytest.mark.asyncio
+async def test_block_height_by_signature_error_mapping():
+    class FailClient:
+        async def fetch_block_height_by_signature(self, signature: str):
+            raise NodeUnreachableError("down")
+
+    assert await get_block_height_by_signature(signature="s" * 44, client=FailClient()) == {"error": "Node unreachable"}
+
+
+@pytest.mark.asyncio
 async def test_first_last_block_error():
     class FailClient:
         async def fetch_first_block(self):

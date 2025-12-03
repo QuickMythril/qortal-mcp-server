@@ -142,3 +142,20 @@ async def test_block_height_by_signature_unexpected_response():
     client = QortalApiClient(async_client=StubClient())
     with pytest.raises(QortalApiError):
         await client.fetch_block_height_by_signature("s" * 44)
+
+
+@pytest.mark.asyncio
+async def test_name_not_found_mapping():
+    mock = MockAsyncClient([MockResponse(404, {"error": "NAME_UNKNOWN"})])
+    client = QortalApiClient(async_client=mock)
+    with pytest.raises(QortalApiError) as excinfo:
+        await client.fetch_name_info("missing")
+    assert "Name not found." in str(excinfo.value)
+
+
+@pytest.mark.asyncio
+async def test_count_chat_messages_invalid_response():
+    mock = MockAsyncClient([MockResponse(200, json_body=None, text_body="abc")])
+    client = QortalApiClient(async_client=mock)
+    with pytest.raises(QortalApiError):
+        await client.count_chat_messages(limit=1)
