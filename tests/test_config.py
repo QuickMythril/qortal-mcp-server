@@ -1,7 +1,12 @@
 import os
 from pathlib import Path
 
-from qortal_mcp.config import _load_timeout, load_api_key, QortalConfig
+from qortal_mcp.config import (
+    _load_timeout,
+    _parse_public_nodes,
+    load_api_key,
+    QortalConfig,
+)
 
 
 def test_load_timeout_invalid_env(monkeypatch):
@@ -38,3 +43,18 @@ def test_default_config_uses_loaded_key(monkeypatch, tmp_path):
     assert key == "file-key"
     cfg = QortalConfig(api_key=key)
     assert cfg.api_key == "file-key"
+
+
+def test_parse_public_nodes():
+    raw = " https://a.example.com , , https://b.example.com ,"
+    assert _parse_public_nodes(raw) == ["https://a.example.com", "https://b.example.com"]
+
+
+def test_qortal_config_public_nodes_opt_in():
+    cfg = QortalConfig(
+        base_url="http://primary",
+        public_nodes=["http://fallback"],
+        allow_public_fallback=True,
+    )
+    assert cfg.allow_public_fallback is True
+    assert cfg.public_nodes == ["http://fallback"]
