@@ -64,6 +64,10 @@ limits and validation: fileciteturn0file0
  - `/crosschain/ledger/{publicKey}`
  - `/crosschain/price/{blockchain}`
  - `/arbitrary/search`
+ - `/chat/messages`, `/chat/messages/count`, `/chat/message/{signature}`, `/chat/active/{address}`
+ - `/groups`, `/groups/owner/{address}`, `/groups/member/{address}`, `/groups/{groupid}`,
+   `/groups/members/{groupid}`, `/groups/invites/{address}`, `/groups/invites/group/{groupid}`,
+   `/groups/joinrequests/{groupid}`, `/groups/bans/{groupid}`
  - `/assets` (list), `/assets/info`, `/assets/balances` (read‑only, with limits)
  - `/blocks/timestamp/{timestamp}`
  - `/blocks/height`
@@ -359,7 +363,191 @@ status. fileciteturn0file0
 
 - `GET /crosschain/tradeoffers?limit={limit}`
 
-### 3.5 QDN tools
+### 3.5 Chat tools
+
+#### `get_chat_messages` (planned)
+
+**Purpose** – Retrieve chat history with strict criteria and truncation for safety.
+
+**Inputs** (all optional unless noted; must supply **either** `txGroupId` **or** two `involving` addresses):
+
+- `txGroupId` (integer) – group ID for group/groupless chats.
+- `involving` (array of 2 Qortal addresses) – required when `txGroupId` is absent.
+- `before` / `after` (ms since epoch) – both must be >= 1500000000000 when supplied.
+- `reference` (Base58), `chatreference` (Base58), `haschatreference` (boolean) – filters for threading.
+- `sender` (Qortal address) – optional sender filter.
+- `encoding` (`BASE58` | `BASE64`) – how Core should encode `data`; defaults to Base58.
+- `limit` / `offset` / `reverse` – paged navigation; limit clamped (default 50, max 100).
+
+**Outputs** (per message, normalized)
+
+```json
+{
+  "timestamp": 0,
+  "txGroupId": 0,
+  "sender": "Q...",
+  "senderName": "alice",
+  "recipient": "Q...",
+  "recipientName": "bob",
+  "chatReference": "…",
+  "reference": "…",
+  "encoding": "BASE58",
+  "data": "…",          // encoded and truncated (e.g., max ~4–8 KB) with "… (truncated)" suffix when shortened
+  "isText": true,
+  "isEncrypted": true,
+  "signature": "…"
+}
+```
+
+**Qortal endpoint**
+
+- `GET /chat/messages` with the filters above
+
+Notes:
+- Requests are rejected unless `txGroupId` XOR two `involving` addresses is provided.
+- Addresses and Base58 references are validated before calling Core.
+- Large `data` fields are truncated to an internal cap to avoid oversized responses; binary attachments are not decoded.
+- Only metadata is returned; no decryption or content interpretation is performed.
+
+#### `count_chat_messages` (planned)
+
+Same filters as `get_chat_messages`; returns an integer count. Useful for pagination without fetching all data.
+
+**Qortal endpoint** – `GET /chat/messages/count`
+
+#### `get_chat_message_by_signature` (planned)
+
+Fetch a single chat message by transaction signature, optionally selecting `encoding`.
+
+**Qortal endpoint** – `GET /chat/message/{signature}`
+
+#### `get_active_chats` (planned)
+
+Summarize recent group and direct chats involving an address (metadata/last message preview only).
+
+**Inputs**
+
+- `address` (required)
+- `encoding` (`BASE58` | `BASE64`, optional)
+- `haschatreference` (boolean, optional)
+
+**Outputs** (shape follows Core’s `ActiveChats` model; mapped to concise fields)
+
+**Qortal endpoint** – `GET /chat/active/{address}`
+
+### 3.6 Group tools
+
+#### `list_groups` (planned)
+
+**Purpose** – List groups with member counts.
+
+**Inputs**
+
+- `limit` / `offset` / `reverse` (optional) – limit clamped (default 50, max 100).
+
+**Outputs** (example shape)
+
+```json
+[
+  {
+    "id": 1,
+    "name": "Example",
+    "owner": "Q...",
+    "isOpen": true,
+    "approvalThreshold": 0,
+    "memberCount": 5
+  }
+]
+```
+
+**Qortal endpoint** – `GET /groups`
+
+#### `get_groups_by_owner` (planned)
+
+List groups owned by an address.
+
+**Inputs** – `address` (required)
+
+**Qortal endpoint** – `GET /groups/owner/{address}`
+
+#### `get_groups_by_member` (planned)
+
+List groups where an address is a member.
+
+**Inputs** – `address` (required)
+
+**Qortal endpoint** – `GET /groups/member/{address}`
+
+#### `get_group` (planned)
+
+Fetch a single group by id; map GROUP_UNKNOWN (1101/404) to “Group not found.”
+
+**Inputs** – `groupId` (positive integer)
+
+**Qortal endpoint** – `GET /groups/{groupid}`
+
+#### `get_group_members` (planned)
+
+List members (optionally admins only) with join timestamps.
+
+**Inputs**
+
+- `groupId` (required, positive integer)
+- `onlyAdmins` (boolean, optional)
+- `limit` / `offset` / `reverse` (optional; limit clamped, default 50, max 100)
+
+**Outputs** (example shape)
+
+```json
+{
+  "memberCount": 5,
+  "adminCount": 2,
+  "members": [
+    { "member": "Q...", "joined": 0, "isAdmin": true }
+  ]
+}
+```
+
+**Qortal endpoint** – `GET /groups/members/{groupid}`
+
+#### `get_group_invites_by_address` (planned)
+
+Pending invites for an address; Core is unpaged, so trim to a configured max (e.g., 100).
+
+**Inputs** – `address` (required)
+
+**Qortal endpoint** – `GET /groups/invites/{address}`
+
+#### `get_group_invites_by_group` (planned)
+
+Pending invites for a group; Core is unpaged, so trim to a configured max (e.g., 100).
+
+**Inputs** – `groupId` (required)
+
+**Qortal endpoint** – `GET /groups/invites/group/{groupid}`
+
+#### `get_group_join_requests` (planned)
+
+Pending join requests for a group; trim to a configured max (e.g., 100).
+
+**Inputs** – `groupId` (required)
+
+**Qortal endpoint** – `GET /groups/joinrequests/{groupid}`
+
+#### `get_group_bans` (planned)
+
+Current bans for a group; trim to a configured max (e.g., 100).
+
+**Inputs** – `groupId` (required)
+
+**Qortal endpoint** – `GET /groups/bans/{groupid}`
+
+Notes for all group tools:
+- Validate addresses (Qortal format) and positive group IDs before calling Core.
+- Clamp all list-style responses to configured maxima to offset unpaged Core endpoints.
+- Exclude all POST transaction-building endpoints under `/groups/*` from the MCP surface.
+
+### 3.7 QDN tools
 
 #### `search_qdn` (v1)
 
@@ -394,7 +582,7 @@ At least one of `address` or `service` must be provided.
 
 Raw data bytes from `/arbitrary/raw/{signature}` are **not** returned in v1.
 
-### 3.6 Optional / future tools
+### 3.8 Optional / future tools
 
 These are candidates for later milestones and are not required for v1: fileciteturn0file0
 
@@ -409,7 +597,7 @@ These are candidates for later milestones and are not required for v1: fileci
 - Minting info and block signer listings are currently omitted for simplicity/safety; re‑add
   only if a bounded, low‑impact use case emerges.
 
-### 3.7 Deliberately omitted for v1
+### 3.9 Deliberately omitted for v1
 
 - State-changing or signing endpoints (transaction create/sign/broadcast/process, fee/unitfee helpers,
   raw decode) remain out of scope by design to keep the surface read-only.
@@ -418,6 +606,8 @@ These are candidates for later milestones and are not required for v1: fileci
   tight limits and a clear use case.
 - Crosschain hidden offers (`/crosschain/tradeoffers/hidden`) are not exposed yet; add only if a
   clear LLM use case arises and limits are in place.
+- Chat POST helpers (`/chat` and `/chat/compute`) and chat WebSocket feeds remain excluded to keep
+  the surface strictly read-only and avoid streaming/large payloads.
 - QDN publisher field is not returned in `search_qdn` results; include it only after confirming the
   Core payload and privacy implications.
 - Account overview omits `assetBalances` beyond QORT to avoid large payloads; consider a bounded
@@ -548,6 +738,10 @@ Add remaining v1 tools:
 - `get_names_by_address`
 - `list_trade_offers`
 - `search_qdn`
+- Read-only chat tools (`get_chat_messages`, `count_chat_messages`,
+  `get_chat_message_by_signature`, `get_active_chats`) with strict limits and truncation.
+- Read-only group tools (listing groups/ownership/membership, group detail, members, invites,
+  join requests, bans) with validation and limits.
 
 Also add:
 
