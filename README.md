@@ -30,7 +30,7 @@ This project is in early development.
   - Trades: `list_trade_offers` (AT address returned as `tradeAddress`)
   - QDN: `search_qdn` (metadata only; name/identifier included when present)
   - Chat: `get_chat_messages`, `count_chat_messages`, `get_chat_message_by_signature`,
-    `get_active_chats`
+    `get_active_chats` (optional `decode_text=true` decodes plaintext when safe)
   - Groups: `list_groups`, `get_groups_by_owner`, `get_groups_by_member`, `get_group`,
     `get_group_members`, `get_group_invites_by_address`, `get_group_invites_by_group`,
     `get_group_join_requests`, `get_group_bans`
@@ -172,6 +172,9 @@ curl "http://localhost:8000/tools/group/1/members?limit=10"
 
 # Chat (messages between two addresses)
 curl "http://localhost:8000/tools/chat/messages?involving=Qaddress1&involving=Qaddress2&limit=5"
+
+# Chat with decoded plaintext (when not encrypted)
+curl "http://localhost:8000/tools/chat/messages?involving=Qaddress1&involving=Qaddress2&limit=5&decode_text=true"
 ```
 
 ## MCP integration (initialize + tools)

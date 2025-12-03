@@ -44,6 +44,8 @@ async def test_chat_messages_clamps_limit_and_truncates():
                     "txGroupId": 0,
                     "sender": "Q" * 34,
                     "data": "x" * 5000,
+                    "isText": True,
+                    "isEncrypted": False,
                 }
                 for _ in range(10)
             ]
@@ -53,6 +55,7 @@ async def test_chat_messages_clamps_limit_and_truncates():
     assert isinstance(result, list)
     assert len(result) == 3
     assert result[0]["data"].endswith("... (truncated)")
+    assert "decodedText" not in result[0]
 
 
 @pytest.mark.asyncio
@@ -87,11 +90,14 @@ async def test_chat_message_by_signature_validation_and_normalization():
                 "txGroupId": 0,
                 "sender": "Q" * 34,
                 "data": "data",
+                "isText": True,
+                "isEncrypted": False,
                 "signature": signature,
             }
 
     result = await get_chat_message_by_signature(signature="1" * 10, client=StubClient())
     assert result["signature"] == "1" * 10
+    assert "decodedText" not in result
 
 
 @pytest.mark.asyncio
@@ -113,3 +119,50 @@ async def test_active_chats_validation_and_mapping():
     result = await get_active_chats(address="Q" * 34, client=StubClient(), config=cfg)
     assert result["groups"][0]["data"].endswith("... (truncated)")
     assert result["direct"][0]["address"] == "Q" * 34
+
+
+@pytest.mark.asyncio
+async def test_decode_text_base58_and_base64():
+    class StubClient:
+        async def fetch_chat_messages(self, **kwargs):
+            return [
+                {"data": "Cn8eVZg", "encoding": "BASE58", "isText": True, "isEncrypted": False},
+                {"data": "aGVsbG8=", "encoding": "BASE64", "isText": True, "isEncrypted": False},
+            ]
+
+    cfg = QortalConfig(max_chat_messages=5, default_chat_messages=5, max_chat_data_preview=10)
+    result = await get_chat_messages(involving=["Q" * 34, "Q" * 34], decode_text=True, client=StubClient(), config=cfg)
+    assert result[0]["decodedText"] == "hello"
+    assert result[1]["decodedText"] == "hello"
+    assert result[0].get("decodedTextTruncated") is False
+
+
+@pytest.mark.asyncio
+async def test_decode_text_skips_encrypted_or_binary():
+    class StubClient:
+        async def fetch_chat_messages(self, **kwargs):
+            return [
+                {"data": "Cn8eVZg", "encoding": "BASE58", "isText": True, "isEncrypted": True},
+                {"data": "%%%notbase58%%%", "encoding": "BASE58", "isText": True, "isEncrypted": False},
+            ]
+
+    result = await get_chat_messages(involving=["Q" * 34, "Q" * 34], decode_text=True, client=StubClient())
+    assert "decodedText" not in result[0]
+    assert "decodedText" not in result[1]
+
+
+@pytest.mark.asyncio
+async def test_decode_text_truncates_decoded_payload():
+    long_plain = "a" * 200
+    import base64
+
+    encoded = base64.b64encode(long_plain.encode("utf-8")).decode("utf-8")
+
+    class StubClient:
+        async def fetch_chat_messages(self, **kwargs):
+            return [{"data": encoded, "encoding": "BASE64", "isText": True, "isEncrypted": False}]
+
+    cfg = QortalConfig(max_chat_data_preview=50)
+    result = await get_chat_messages(involving=["Q" * 34, "Q" * 34], decode_text=True, client=StubClient(), config=cfg)
+    assert result[0]["decodedText"].endswith("... (truncated)")
+    assert result[0]["decodedTextTruncated"] is True

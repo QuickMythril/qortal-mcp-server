@@ -13,11 +13,14 @@ from qortal_mcp.qortal_api import (
     UnauthorizedError,
     default_client,
 )
+import base64
+
 from qortal_mcp.tools.validators import clamp_limit, is_base58_string, is_valid_qortal_address
 
 logger = logging.getLogger(__name__)
 
 MIN_TIMESTAMP_MS = 1_500_000_000_000  # per Core validation
+BASE58_ALPHABET = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz"
 
 
 def _truncate(value: Optional[str], *, max_len: int) -> Optional[str]:
@@ -28,7 +31,49 @@ def _truncate(value: Optional[str], *, max_len: int) -> Optional[str]:
     return value[:max_len] + "... (truncated)"
 
 
-def _normalize_message(raw: Dict[str, Any], *, config: QortalConfig) -> Dict[str, Any]:
+def _decode_base58(value: str) -> Optional[bytes]:
+    """Decode a Base58 string; return None on failure."""
+    if not value or not isinstance(value, str):
+        return None
+    value = value.strip()
+    num = 0
+    try:
+        for char in value:
+            num = num * 58 + BASE58_ALPHABET.index(char)
+    except ValueError:
+        return None
+    # Convert integer to bytes
+    result = bytearray()
+    while num > 0:
+        num, rem = divmod(num, 256)
+        result.insert(0, rem)
+    # Handle leading zeros
+    n_pad = 0
+    for char in value:
+        if char == "1":
+            n_pad += 1
+        else:
+            break
+    return bytes([0] * n_pad) + bytes(result)
+
+
+def _decode_text(data: Optional[str], *, encoding: Optional[str]) -> Optional[str]:
+    if not isinstance(data, str):
+        return None
+    enc = (encoding or "BASE58").upper()
+    try:
+        if enc == "BASE64":
+            return base64.b64decode(data, validate=False).decode("utf-8", errors="ignore")
+        # Default to Base58
+        decoded = _decode_base58(data)
+        if decoded is None:
+            return None
+        return decoded.decode("utf-8", errors="ignore")
+    except Exception:
+        return None
+
+
+def _normalize_message(raw: Dict[str, Any], *, config: QortalConfig, decode_text: bool = False) -> Dict[str, Any]:
     return {
         "timestamp": raw.get("timestamp"),
         "txGroupId": raw.get("txGroupId"),
@@ -43,7 +88,24 @@ def _normalize_message(raw: Dict[str, Any], *, config: QortalConfig) -> Dict[str
         "isText": raw.get("isText"),
         "isEncrypted": raw.get("isEncrypted"),
         "signature": raw.get("signature"),
+        **_maybe_decoded(raw, config=config, decode_text=decode_text),
     }
+
+
+def _maybe_decoded(raw: Dict[str, Any], *, config: QortalConfig, decode_text: bool) -> Dict[str, Any]:
+    if not decode_text:
+        return {}
+    if not raw.get("isText") or raw.get("isEncrypted"):
+        return {}
+    data_field = raw.get("data")
+    decoded = _decode_text(data_field, encoding=raw.get("encoding"))
+    if decoded is None:
+        return {}
+    truncated = False
+    if len(decoded) > config.max_chat_data_preview:
+        decoded = decoded[: config.max_chat_data_preview] + "... (truncated)"
+        truncated = True
+    return {"decodedText": decoded, "decodedTextTruncated": truncated}
 
 
 def _normalize_active_chats(raw: Dict[str, Any], *, config: QortalConfig) -> Dict[str, Any]:
@@ -110,6 +172,7 @@ def _parse_common_filters(
     offset: Optional[int],
     reverse: Optional[bool],
     config: QortalConfig,
+    decode_text: Optional[bool],
 ) -> Tuple[Optional[Dict[str, Any]], Optional[Dict[str, str]]]:
     # Criteria: txGroupId XOR two involving addresses
     has_tx_group = tx_group_id is not None
@@ -158,6 +221,9 @@ def _parse_common_filters(
     effective_limit = clamp_limit(limit, default=config.default_chat_messages, max_value=config.max_chat_messages)
     effective_offset = clamp_limit(offset, default=0, max_value=config.max_chat_messages)
 
+    if decode_text is not None and not isinstance(decode_text, bool):
+        return None, {"error": "decode_text must be boolean."}
+
     return (
         {
             "txGroupId": tx_group_id if has_tx_group else None,
@@ -172,6 +238,7 @@ def _parse_common_filters(
             "limit": effective_limit,
             "offset": effective_offset,
             "reverse": reverse,
+            "decodeText": bool(decode_text) if decode_text is not None else False,
         },
         None,
     )
@@ -204,6 +271,7 @@ async def get_chat_messages(
     limit: Optional[int] = None,
     offset: Optional[int] = None,
     reverse: Optional[bool] = None,
+    decode_text: Optional[bool] = None,
     client=default_client,
     config: QortalConfig = default_config,
 ) -> List[Dict[str, Any]] | Dict[str, str]:
@@ -220,6 +288,7 @@ async def get_chat_messages(
         limit=limit,
         offset=offset,
         reverse=reverse,
+        decode_text=decode_text,
         config=config,
     )
     if error:
@@ -247,7 +316,7 @@ async def get_chat_messages(
     if isinstance(raw, list):
         for entry in raw[: parsed["limit"]]:
             if isinstance(entry, dict):
-                results.append(_normalize_message(entry, config=config))
+                results.append(_normalize_message(entry, config=config, decode_text=bool(parsed["decodeText"])))
     return results[: parsed["limit"]]
 
 
@@ -265,6 +334,7 @@ async def count_chat_messages(
     limit: Optional[int] = None,
     offset: Optional[int] = None,
     reverse: Optional[bool] = None,
+    decode_text: Optional[bool] = None,
     client=default_client,
     config: QortalConfig = default_config,
 ) -> Dict[str, Any]:
@@ -281,6 +351,7 @@ async def count_chat_messages(
         limit=limit,
         offset=offset,
         reverse=reverse,
+        decode_text=decode_text,
         config=config,
     )
     if error:
@@ -308,7 +379,12 @@ async def count_chat_messages(
 
 
 async def get_chat_message_by_signature(
-    *, signature: Optional[str], encoding: Optional[str] = None, client=default_client, config: QortalConfig = default_config
+    *,
+    signature: Optional[str],
+    encoding: Optional[str] = None,
+    decode_text: Optional[bool] = None,
+    client=default_client,
+    config: QortalConfig = default_config,
 ) -> Dict[str, Any]:
     if not signature or not is_base58_string(signature, min_length=10):
         return {"error": "Invalid signature."}
@@ -322,13 +398,16 @@ async def get_chat_message_by_signature(
             return {"error": "Invalid encoding."}
         normalized_encoding = upper
 
+    if decode_text is not None and not isinstance(decode_text, bool):
+        return {"error": "decode_text must be boolean."}
+
     try:
         raw = await client.fetch_chat_message(signature, encoding=normalized_encoding)
     except Exception as exc:  # noqa: BLE001
         return _map_error(exc)
 
     if isinstance(raw, dict):
-        return _normalize_message(raw, config=config)
+        return _normalize_message(raw, config=config, decode_text=bool(decode_text))
     return {"error": "Unexpected response from Qortal API."}
 
 
@@ -337,6 +416,7 @@ async def get_active_chats(
     address: Optional[str],
     encoding: Optional[str] = None,
     has_chat_reference: Optional[Any] = None,
+    decode_text: Optional[bool] = None,
     client=default_client,
     config: QortalConfig = default_config,
 ) -> Dict[str, Any]:
@@ -354,6 +434,9 @@ async def get_active_chats(
 
     if has_chat_reference is not None and not isinstance(has_chat_reference, bool):
         return {"error": "hasChatReference must be boolean."}
+
+    if decode_text is not None and not isinstance(decode_text, bool):
+        return {"error": "decode_text must be boolean."}
 
     try:
         raw = await client.fetch_active_chats(

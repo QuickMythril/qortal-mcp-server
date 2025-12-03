@@ -393,6 +393,8 @@ status. fileciteturn0file0
   "reference": "…",
   "encoding": "BASE58",
   "data": "…",          // encoded and truncated (e.g., max ~4–8 KB) with "… (truncated)" suffix when shortened
+  "decodedText": "hello",          // present only when decode_text=true and decoding succeeds (isText && !isEncrypted)
+  "decodedTextTruncated": false,
   "isText": true,
   "isEncrypted": true,
   "signature": "…"
@@ -408,6 +410,7 @@ Notes:
 - Addresses and Base58 references are validated before calling Core.
 - Large `data` fields are truncated to an internal cap to avoid oversized responses; binary attachments are not decoded.
 - Only metadata is returned; no decryption or content interpretation is performed.
+- Optional `decode_text` parameter attempts UTF-8 decoding when `isText=true` and `isEncrypted=false`, using the reported encoding (Base58/Base64). Decoding is capped to the same truncation limit and signals `decodedTextTruncated` when clipped; failures omit `decodedText`.
 
 #### `count_chat_messages` (v1)
 

@@ -485,6 +485,7 @@ async def chat_messages(
     limit: int | None = Query(None, ge=0),
     offset: int | None = Query(None, ge=0),
     reverse: bool | None = Query(None),
+    decode_text: bool | None = Query(None),
 ) -> JSONResponse:
     """Proxy for get_chat_messages tool."""
     limited = await _enforce_rate_limit("get_chat_messages")
@@ -503,6 +504,7 @@ async def chat_messages(
         limit=limit,
         offset=offset,
         reverse=reverse,
+        decode_text=decode_text,
     )
     request_id = getattr(request.state, "request_id", None)
     _log_tool_result("get_chat_messages", result if isinstance(result, dict) else {}, request_id)
@@ -524,6 +526,7 @@ async def chat_messages_count(
     limit: int | None = Query(None, ge=0),
     offset: int | None = Query(None, ge=0),
     reverse: bool | None = Query(None),
+    decode_text: bool | None = Query(None),
 ) -> JSONResponse:
     """Proxy for count_chat_messages tool."""
     limited = await _enforce_rate_limit("count_chat_messages")
@@ -542,6 +545,7 @@ async def chat_messages_count(
         limit=limit,
         offset=offset,
         reverse=reverse,
+        decode_text=decode_text,
     )
     request_id = getattr(request.state, "request_id", None)
     _log_tool_result("count_chat_messages", result if isinstance(result, dict) else {}, request_id)
@@ -549,12 +553,14 @@ async def chat_messages_count(
 
 
 @app.get("/tools/chat/message/{signature}")
-async def chat_message_by_signature(signature: str, request: Request, encoding: str | None = Query(None)) -> JSONResponse:
+async def chat_message_by_signature(
+    signature: str, request: Request, encoding: str | None = Query(None), decode_text: bool | None = Query(None)
+) -> JSONResponse:
     """Proxy for get_chat_message_by_signature tool."""
     limited = await _enforce_rate_limit("get_chat_message_by_signature")
     if limited:
         return limited
-    result = await get_chat_message_by_signature(signature=signature, encoding=encoding)
+    result = await get_chat_message_by_signature(signature=signature, encoding=encoding, decode_text=decode_text)
     request_id = getattr(request.state, "request_id", None)
     _log_tool_result("get_chat_message_by_signature", result if isinstance(result, dict) else {}, request_id)
     return JSONResponse(content=result)
@@ -566,6 +572,7 @@ async def active_chats(
     request: Request,
     encoding: str | None = Query(None),
     haschatreference: bool | None = Query(None),
+    decode_text: bool | None = Query(None),
 ) -> JSONResponse:
     """Proxy for get_active_chats tool."""
     limited = await _enforce_rate_limit("get_active_chats")
@@ -575,6 +582,7 @@ async def active_chats(
         address=address,
         encoding=encoding,
         has_chat_reference=haschatreference,
+        decode_text=decode_text,
     )
     request_id = getattr(request.state, "request_id", None)
     _log_tool_result("get_active_chats", result if isinstance(result, dict) else {}, request_id)
