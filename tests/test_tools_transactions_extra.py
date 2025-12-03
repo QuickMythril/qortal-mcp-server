@@ -27,6 +27,21 @@ async def test_transaction_by_reference_validation():
 
 
 @pytest.mark.asyncio
+async def test_transaction_by_reference_success_and_errors():
+    class StubClient:
+        async def fetch_transaction_by_reference(self, reference: str):
+            return {"reference": reference}
+
+    assert await get_transaction_by_reference(reference="r1", client=StubClient()) == {"reference": "r1"}
+
+    class ApiClient:
+        async def fetch_transaction_by_reference(self, reference: str):
+            raise NodeUnreachableError("down")
+
+    assert await get_transaction_by_reference(reference="r1", client=ApiClient()) == {"error": "Node unreachable"}
+
+
+@pytest.mark.asyncio
 async def test_list_transactions_by_block_validation_and_error():
     assert await list_transactions_by_block(signature=None) == {"error": "Signature is required."}
 
@@ -41,6 +56,12 @@ async def test_list_transactions_by_block_validation_and_error():
             raise QortalApiError("missing", code="BLOCK_UNKNOWN")
 
     assert await list_transactions_by_block(signature="s" * 44, client=BlockNotFoundClient()) == {"error": "Block not found."}
+
+    class UnexpectedClient:
+        async def fetch_transactions_by_block(self, signature: str, **kwargs):
+            return {"not": "list"}
+
+    assert await list_transactions_by_block(signature="s" * 44, client=UnexpectedClient()) == {"not": "list"}
 
 
 @pytest.mark.asyncio

@@ -179,3 +179,24 @@ async def test_decode_text_truncates_decoded_payload():
     result = await get_chat_messages(involving=["Q" * 34, "Q" * 34], decode_text=True, client=StubClient(), config=cfg)
     assert result[0]["decodedText"].endswith("... (truncated)")
     assert result[0]["decodedTextTruncated"] is True
+
+
+@pytest.mark.asyncio
+async def test_chat_message_by_signature_error_mapping():
+    class FailClient:
+        async def fetch_chat_message(self, signature, encoding=None):
+            raise NodeUnreachableError("down")
+
+    assert await get_chat_message_by_signature(signature="1" * 10, client=FailClient()) == {"error": "Node unreachable"}
+
+    class ApiClient:
+        async def fetch_chat_message(self, signature, encoding=None):
+            raise QortalApiError("bad")
+
+    assert await get_chat_message_by_signature(signature="1" * 10, client=ApiClient()) == {"error": "Qortal API error."}
+
+
+@pytest.mark.asyncio
+async def test_chat_messages_decode_text_type_validation():
+    result = await get_chat_messages(involving=["Q" * 34, "Q" * 34], decode_text="yes")
+    assert result == {"error": "decode_text must be boolean."}

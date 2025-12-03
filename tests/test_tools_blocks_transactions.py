@@ -119,6 +119,22 @@ async def test_block_at_timestamp_success():
 
 
 @pytest.mark.asyncio
+async def test_list_block_range_success():
+    captured = {}
+
+    class StubClient:
+        async def fetch_block_range(self, **kwargs):
+            captured.update(kwargs)
+            return [{"height": 1}, {"height": 2}]
+
+    cfg = QortalConfig(default_block_range=1, max_block_range=2)
+    result = await list_block_range(height=5, count=5, reverse=True, include_online_signatures=True, client=StubClient(), config=cfg)
+    assert len(result) == 2
+    assert captured["reverse"] is True
+    assert captured["include_online_signatures"] is True
+
+
+@pytest.mark.asyncio
 async def test_block_range_success_and_unauthorized():
     captured = {}
 

@@ -4,6 +4,7 @@ from qortal_mcp.tools.trade import (
     get_trade_price,
     get_trade_ledger,
     list_hidden_trade_offers,
+    list_trade_offers,
     get_trade_detail,
     list_completed_trades,
 )
@@ -40,6 +41,16 @@ async def test_get_trade_price_validation_and_errors():
             raise UnauthorizedError("nope")
 
     assert await get_trade_price(blockchain="BITCOIN", client=UnauthorizedClient()) == {"error": "Unauthorized or API key required."}
+
+
+@pytest.mark.asyncio
+async def test_list_trade_offers_unexpected_response():
+    class UnexpectedClient:
+        async def fetch_trade_offers(self, **kwargs):
+            return {"not": "list"}
+
+    result = await list_trade_offers(client=UnexpectedClient())
+    assert result == []
 
 
 @pytest.mark.asyncio

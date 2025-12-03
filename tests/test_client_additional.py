@@ -159,3 +159,45 @@ async def test_count_chat_messages_invalid_response():
     client = QortalApiClient(async_client=mock)
     with pytest.raises(QortalApiError):
         await client.count_chat_messages(limit=1)
+
+
+@pytest.mark.asyncio
+async def test_name_not_found_and_asset_not_found_mappings():
+    mock = MockAsyncClient([MockResponse(404, {"error": "NAME_UNKNOWN"})])
+    client = QortalApiClient(async_client=mock)
+    with pytest.raises(QortalApiError) as excinfo:
+        await client.fetch_name_info("missing")
+    assert "Name not found." in str(excinfo.value)
+
+    mock = MockAsyncClient([MockResponse(400, {"error": "INVALID_ASSET_ID"})])
+    client = QortalApiClient(async_client=mock)
+    with pytest.raises(QortalApiError) as excinfo:
+        await client.fetch_asset_info(asset_id=5)
+    assert "Asset not found." in str(excinfo.value)
+
+
+@pytest.mark.asyncio
+async def test_request_uses_api_key_header():
+    mock = MockAsyncClient([MockResponse(200, {"ok": True})])
+    from qortal_mcp.config import QortalConfig
+
+    cfg = QortalConfig(base_url="http://localhost", api_key="secret")
+    client = QortalApiClient(config=cfg, async_client=mock)
+    await client.fetch_node_status()
+    assert mock.calls[0]["headers"]["X-API-KEY"] == "secret"
+
+
+@pytest.mark.asyncio
+async def test_search_names_unexpected_json():
+    mock = MockAsyncClient([MockResponse(200, json_body=None)])
+    client = QortalApiClient(async_client=mock)
+    with pytest.raises(QortalApiError):
+        await client.search_names("alice")
+
+
+@pytest.mark.asyncio
+async def test_node_status_unexpected_shape():
+    mock = MockAsyncClient([MockResponse(200, json_body=[{"bad": True}])])
+    client = QortalApiClient(async_client=mock)
+    with pytest.raises(QortalApiError):
+        await client.fetch_node_status()
