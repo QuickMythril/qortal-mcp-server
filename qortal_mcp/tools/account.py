@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import logging
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
 from qortal_mcp.config import QortalConfig, default_config
 from qortal_mcp.qortal_api import (
@@ -14,7 +14,7 @@ from qortal_mcp.qortal_api import (
     UnauthorizedError,
     default_client,
 )
-from qortal_mcp.tools.validators import is_valid_qortal_address
+from qortal_mcp.tools.validators import is_valid_qortal_address, parse_int_list
 
 logger = logging.getLogger(__name__)
 
@@ -61,9 +61,111 @@ def _extract_names(raw_names: Any, max_items: int) -> List[str]:
     return names[:max_items]
 
 
+async def _resolve_asset_name(client, asset_id: int) -> Optional[str]:
+    try:
+        info = await client.fetch_asset_info(asset_id=asset_id)
+    except Exception:
+        return None
+    if isinstance(info, dict):
+        name = info.get("name") or info.get("assetName")
+        if isinstance(name, str):
+            return name
+    return None
+
+
+async def _fetch_asset_balances(
+    *,
+    client,
+    address: str,
+    asset_ids: Optional[List[int]],
+    config: QortalConfig,
+) -> List[Dict[str, Any]]:
+    max_assets = config.max_asset_overview
+    parsed_ids = parse_int_list(asset_ids, max_items=max_assets) if asset_ids is not None else None
+
+    if asset_ids is not None and parsed_ids is None:
+        return {"error": "Invalid asset_ids; must be 1 to %d integers." % max_assets}
+
+    # If explicit IDs provided
+    if parsed_ids:
+        balances: List[Dict[str, Any]] = []
+        for asset_id in parsed_ids[:max_assets]:
+            try:
+                raw_balance = await client.fetch_address_balance(address, asset_id=asset_id)
+                balance_str = _normalize_balance(raw_balance)
+                name = await _resolve_asset_name(client, asset_id)
+                entry: Dict[str, Any] = {
+                    "assetId": asset_id,
+                    "balance": balance_str,
+                }
+                if name:
+                    entry["name"] = name
+                balances.append(entry)
+            except InvalidAddressError:
+                return [{"error": "Invalid Qortal address."}]
+            except AddressNotFoundError:
+                return [{"error": "Address not found on chain."}]
+            except UnauthorizedError:
+                return [{"error": "Unauthorized or API key required."}]
+            except NodeUnreachableError:
+                return [{"error": "Node unreachable"}]
+            except QortalApiError:
+                balances.append({"assetId": asset_id, "error": "Asset not found."})
+            except Exception:
+                logger.exception("Unexpected error fetching asset balance for asset %s", asset_id)
+                balances.append({"assetId": asset_id, "error": "Unexpected error."})
+        return balances[:max_assets]
+
+    # No explicit IDs: fetch top-N balances for this address
+    try:
+        raw = await client.fetch_asset_balances(
+            addresses=[address],
+            limit=config.default_asset_overview,
+            exclude_zero=True,
+            ordering="ASSET_BALANCE_ACCOUNT",
+        )
+    except InvalidAddressError:
+        return [{"error": "Invalid Qortal address."}]
+    except AddressNotFoundError:
+        return [{"error": "Address not found on chain."}]
+    except UnauthorizedError:
+        return [{"error": "Unauthorized or API key required."}]
+    except NodeUnreachableError:
+        return [{"error": "Node unreachable"}]
+    except QortalApiError:
+        return [{"error": "Qortal API error."}]
+    except Exception:
+        logger.exception("Unexpected error fetching asset balances for %s", address)
+        return [{"error": "Unexpected error while retrieving asset balances."}]
+
+    results: List[Dict[str, Any]] = []
+    if isinstance(raw, list):
+        for entry in raw[:max_assets]:
+            if not isinstance(entry, dict):
+                continue
+            asset_id = entry.get("assetId") or entry.get("assetid") or entry.get("assetID")
+            try:
+                parsed_asset_id = int(asset_id)
+            except (TypeError, ValueError):
+                continue
+            balance_value = entry.get("balance") or entry.get("assetBalance")
+            normalized_balance = _normalize_balance(balance_value)
+            results.append({"assetId": parsed_asset_id, "balance": normalized_balance})
+
+    # Optionally resolve names for the collected asset IDs
+    for item in results:
+        name = await _resolve_asset_name(client, item["assetId"])
+        if name:
+            item["name"] = name
+
+    return results[:max_assets]
+
+
 async def get_account_overview(
     address: str,
     *,
+    include_assets: bool = False,
+    asset_ids: Optional[List[int]] = None,
     client=default_client,
     config: QortalConfig = default_config,
 ) -> Dict[str, Any]:
@@ -133,13 +235,26 @@ async def get_account_overview(
         logger.exception("Unexpected error fetching names for %s", address)
         names = []
 
+    asset_balances: List[Dict[str, Any]] = []
+    if include_assets:
+        assets_result = await _fetch_asset_balances(
+            client=client,
+            address=address,
+            asset_ids=asset_ids,
+            config=config,
+        )
+        if isinstance(assets_result, dict) and assets_result.get("error"):
+            return assets_result
+        if isinstance(assets_result, list):
+            asset_balances = assets_result
+
     return {
         "address": account_info.get("address", address),
         "publicKey": account_info.get("publicKey"),
         "blocksMinted": _safe_int(account_info.get("blocksMinted")),
         "level": _safe_int(account_info.get("level")),
         "balance": balance,
-        "assetBalances": [],
+        "assetBalances": asset_balances[: config.max_asset_overview],
         "names": names,
     }
 

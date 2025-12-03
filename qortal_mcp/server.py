@@ -205,12 +205,17 @@ async def node_uptime(request: Request) -> JSONResponse:
 
 
 @app.get("/tools/account_overview/{address}")
-async def account_overview(address: str, request: Request) -> JSONResponse:
+async def account_overview(
+    address: str,
+    request: Request,
+    include_assets: bool | None = Query(False),
+    asset_ids: List[int] | None = Query(None),
+) -> JSONResponse:
     """Proxy for get_account_overview tool."""
     limited = await _enforce_rate_limit("get_account_overview")
     if limited:
         return limited
-    result = await get_account_overview(address)
+    result = await get_account_overview(address, include_assets=include_assets, asset_ids=asset_ids)
     request_id = getattr(request.state, "request_id", None)
     _log_tool_result("get_account_overview", result if isinstance(result, dict) else {}, request_id)
     return JSONResponse(content=result)

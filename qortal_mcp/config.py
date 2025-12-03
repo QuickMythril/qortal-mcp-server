@@ -45,6 +45,8 @@ MAX_ASSETS_RETURNED = 100
 DEFAULT_ASSETS_RETURNED = 50
 MAX_ASSET_BALANCES = 100
 DEFAULT_ASSET_BALANCES = 50
+MAX_ASSET_OVERVIEW = 10
+DEFAULT_ASSET_OVERVIEW = 5
 MAX_BLOCK_SUMMARIES = 2000
 DEFAULT_BLOCK_SUMMARIES = 1000
 MAX_BLOCK_RANGE = 500
@@ -103,6 +105,8 @@ class QortalConfig:
     default_assets: int = DEFAULT_ASSETS_RETURNED
     max_asset_balances: int = MAX_ASSET_BALANCES
     default_asset_balances: int = DEFAULT_ASSET_BALANCES
+    max_asset_overview: int = MAX_ASSET_OVERVIEW
+    default_asset_overview: int = DEFAULT_ASSET_OVERVIEW
     max_block_summaries: int = MAX_BLOCK_SUMMARIES
     default_block_summaries: int = DEFAULT_BLOCK_SUMMARIES
     max_block_range: int = MAX_BLOCK_RANGE

@@ -145,8 +145,12 @@ TOOL_REGISTRY: Dict[str, ToolDefinition] = {
     ),
     "get_account_overview": ToolDefinition(
         name="get_account_overview",
-        description="Return account info, QORT balance, and names for an address.",
-        params={"address": "string (required)"},
+        description="Return account info, QORT balance, names, and optionally bounded asset balances.",
+        params={
+            "address": "string (required)",
+            "include_assets": "boolean (optional)",
+            "asset_ids": "array of integers (optional, bounded)",
+        },
         input_schema={
             "type": "object",
             "properties": {
@@ -156,7 +160,15 @@ TOOL_REGISTRY: Dict[str, ToolDefinition] = {
                     "pattern": ADDRESS_PATTERN,
                     "minLength": 34,
                     "maxLength": 34,
-                }
+                },
+                "include_assets": {"type": "boolean"},
+                "asset_ids": {
+                    "type": "array",
+                    "description": f"Optional asset IDs (max {default_config.max_asset_overview})",
+                    "minItems": 1,
+                    "maxItems": default_config.max_asset_overview,
+                    "items": {"type": "integer", "minimum": 0},
+                },
             },
             "required": ["address"],
             "additionalProperties": False,

@@ -212,12 +212,13 @@ current time).
 
 #### `get_account_overview` (v1)
 
-**Purpose** – Provide a concise summary of an account combining identity,
-minting metrics, balance, and optionally owned names. fileciteturn0file0
+**Purpose** – Provide a concise summary of an account combining identity, minting metrics, balance, optionally owned names, and (opt-in) bounded asset balances. 
 
 **Inputs**
 
 - `address` (string, required) – Qortal address
+- `include_assets` (boolean, optional; default false)
+- `asset_ids` (array<int>, optional; max capped by config). If provided, must be 1..N ints and are fetched in order. If not provided but `include_assets` is true, the top-N non-zero balances for the address are returned.
 
 **Outputs** (example shape)
 
@@ -228,20 +229,22 @@ minting metrics, balance, and optionally owned names. fileciteturn0file0�
   "blocksMinted": 0,
   "level": 0,
   "balance": "0.00000000",
-  "assetBalances": [],
+  "assetBalances": [
+    { "assetId": 1, "balance": "10.0", "name": "EXAMPLE" }
+  ],
   "names": ["example-name"]
 }
 ```
 
-Current v1 behavior: `balance` is populated with QORT (asset 0) and
-`assetBalances` is intentionally left empty to avoid large payloads; additional
-asset balances can be added later with strict limits if needed.
+Current behavior: `balance` is populated with QORT (asset 0). Asset balances are returned only when `include_assets=true`, with strict bounds on the number of assets (config-driven) and validation of `asset_ids` when provided.
 
 **Qortal endpoints**
 
 - `GET /addresses/{address}` – base account info
-- `GET /addresses/balance/{address}` – QORT balance (or `/assets/balances`) fileciteturn0file0
+- `GET /addresses/balance/{address}` – QORT balance (or `/assets/balances`) 
 - `GET /names/address/{address}` – names owned by the address
+- `GET /assets/balances` – when fetching top-N non-zero balances (address-scoped)
+- `GET /assets/info` – optional per-asset name resolution when bounded by config
 
 #### `get_balance` (v1, simple helper)
 

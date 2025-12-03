@@ -8,6 +8,7 @@ from qortal_mcp.qortal_api.client import (
     UnauthorizedError,
     QortalApiError,
 )
+from qortal_mcp.config import QortalConfig
 
 
 def test_validate_address_format():
@@ -83,6 +84,70 @@ async def test_account_overview_names_unauthorized():
 
     result = await get_account_overview("QgB7zMfujQMLkisp1Lc8PBkVYs75sYB3vV", client=StubClient())
     assert result == {"error": "Unauthorized or API key required."}
+
+
+@pytest.mark.asyncio
+async def test_account_overview_include_assets_explicit_ids():
+    class StubClient:
+        async def fetch_address_info(self, address):
+            return {"address": address, "publicKey": "pk", "blocksMinted": 1, "level": 2}
+
+        async def fetch_address_balance(self, address, asset_id=0):
+            return {"balance": "1.0"} if asset_id == 0 else {"balance": str(asset_id)}
+
+        async def fetch_names_by_owner(self, address):
+            return {"names": []}
+
+        async def fetch_asset_info(self, asset_id=None, asset_name=None):
+            return {"name": f"ASSET-{asset_id}"}
+
+    overview = await get_account_overview(
+        "QgB7zMfujQMLkisp1Lc8PBkVYs75sYB3vV",
+        include_assets=True,
+        asset_ids=[1, 2, 3, 4, 5, 6],
+        client=StubClient(),
+        config=QortalConfig(max_asset_overview=3, default_asset_overview=2),
+    )
+    assert overview == {"error": "Invalid asset_ids; must be 1 to 3 integers."}
+
+
+@pytest.mark.asyncio
+async def test_account_overview_include_assets_top_n():
+    class StubClient:
+        async def fetch_address_info(self, address):
+            return {"address": address, "publicKey": "pk", "blocksMinted": 1, "level": 2}
+
+        async def fetch_address_balance(self, address, asset_id=0):
+            return {"balance": "1.0"}
+
+        async def fetch_names_by_owner(self, address):
+            return {"names": []}
+
+        async def fetch_asset_balances(self, **kwargs):
+            return [
+                {"assetId": 1, "balance": "5"},
+                {"assetId": 2, "balance": "4"},
+                {"assetId": 3, "balance": "3"},
+            ]
+
+        async def fetch_asset_info(self, asset_id=None, asset_name=None):
+            return {"name": f"ASSET-{asset_id}"}
+
+    overview = await get_account_overview(
+        "QgB7zMfujQMLkisp1Lc8PBkVYs75sYB3vV",
+        include_assets=True,
+        client=StubClient(),
+        config=QortalConfig(max_asset_overview=2, default_asset_overview=2),
+    )
+    assert len(overview["assetBalances"]) == 2
+    assert overview["assetBalances"][0]["assetId"] == 1
+    assert overview["assetBalances"][0]["name"] == "ASSET-1"
+
+
+@pytest.mark.asyncio
+async def test_account_overview_asset_ids_invalid():
+    overview = await get_account_overview("QgB7zMfujQMLkisp1Lc8PBkVYs75sYB3vV", include_assets=True, asset_ids="bad")
+    assert overview == {"error": "Invalid asset_ids; must be 1 to 10 integers."}
 
 
 @pytest.mark.asyncio

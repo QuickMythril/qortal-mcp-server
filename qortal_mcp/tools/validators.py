@@ -56,6 +56,23 @@ def clamp_limit(value: Optional[int], *, default: int, max_value: int) -> int:
     return min(parsed, max_value)
 
 
+def parse_int_list(values: Optional[list[Any]], *, max_items: int) -> Optional[list[int]]:
+    """Parse a list of ints with bounds; return None on validation failure."""
+    if values is None:
+        return None
+    if not isinstance(values, list):
+        return None
+    if len(values) == 0 or len(values) > max_items:
+        return None
+    parsed: list[int] = []
+    for item in values:
+        try:
+            parsed.append(int(item))
+        except (TypeError, ValueError):
+            return None
+    return parsed
+
+
 def is_base58_string(value: Optional[str], *, min_length: int = 1, max_length: Optional[int] = None) -> bool:
     """Validate a Base58 string using a simple character check and length bounds."""
     if not value or not isinstance(value, str):
