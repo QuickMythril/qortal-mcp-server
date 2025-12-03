@@ -31,6 +31,7 @@ from qortal_mcp.tools import (
     get_node_summary,
     get_node_uptime,
     list_trade_offers,
+    list_hidden_trade_offers,
     search_qdn,
     validate_address,
     list_groups,

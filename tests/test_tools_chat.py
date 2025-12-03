@@ -84,6 +84,12 @@ async def test_count_chat_messages_maps_count():
     result = await count_chat_messages(involving=["Q" * 34, "Q" * 34], client=UnauthorizedClient())
     assert result == {"error": "Invalid Qortal address."}
 
+    class UnreachableClient:
+        async def count_chat_messages(self, **kwargs):
+            raise NodeUnreachableError("down")
+
+    assert await count_chat_messages(involving=["Q" * 34, "Q" * 34], client=UnreachableClient()) == {"error": "Node unreachable"}
+
 
 @pytest.mark.asyncio
 async def test_chat_message_by_signature_validation_and_normalization():

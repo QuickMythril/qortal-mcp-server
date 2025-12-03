@@ -89,6 +89,36 @@ async def test_block_range_invalid():
 
 
 @pytest.mark.asyncio
+async def test_block_range_node_unreachable():
+    class FailClient:
+        async def fetch_block_range(self, **kwargs):
+            raise NodeUnreachableError("down")
+
+    result = await list_block_range(height=1, count=1, client=FailClient())
+    assert result == {"error": "Node unreachable"}
+
+
+@pytest.mark.asyncio
+async def test_block_summaries_unauthorized():
+    class FailClient:
+        async def fetch_block_summaries(self, **kwargs):
+            raise UnauthorizedError("nope")
+
+    result = await list_block_summaries(start=1, end=2, client=FailClient())
+    assert result == {"error": "Unauthorized or API key required."}
+
+
+@pytest.mark.asyncio
+async def test_block_at_timestamp_success():
+    class StubClient:
+        async def fetch_block_at_timestamp(self, ts):
+            return {"height": 10, "timestamp": ts}
+
+    result = await get_block_at_timestamp(5, client=StubClient())
+    assert result["height"] == 10
+
+
+@pytest.mark.asyncio
 async def test_block_range_success_and_unauthorized():
     captured = {}
 

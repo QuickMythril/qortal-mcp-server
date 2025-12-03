@@ -77,6 +77,22 @@ async def test_group_detail_invalid_and_not_found():
 
 
 @pytest.mark.asyncio
+async def test_groups_by_owner_success_and_error():
+    class StubClient:
+        async def fetch_groups_by_owner(self, address: str):
+            return [{"groupId": 2, "groupName": "demo", "owner": address, "memberCount": 1}]
+
+    result = await get_groups_by_owner(address="Q" * 34, client=StubClient())
+    assert result[0]["owner"].startswith("Q")
+
+    class ApiErrorClient:
+        async def fetch_groups_by_owner(self, address: str):
+            raise NodeUnreachableError("down")
+
+    assert await get_groups_by_owner(address="Q" * 34, client=ApiErrorClient()) == {"error": "Node unreachable"}
+
+
+@pytest.mark.asyncio
 async def test_group_members_validation_and_normalization():
     assert await get_group_members(group_id=0) == {"error": "Invalid group id."}
     assert await get_group_members(group_id=1, only_admins="yes") == {"error": "only_admins must be boolean."}

@@ -96,3 +96,70 @@ def test_chat_count_route(monkeypatch, client):
     resp = client.get("/tools/chat/messages/count?involving=Q" + "1" * 33 + "&involving=Q" + "2" * 33)
     assert resp.status_code == 200
     assert resp.json()["count"] == 2
+
+
+def test_name_routes(monkeypatch, client):
+    async def names_by_address(address, **kwargs):
+        return [{"name": "demo", "owner": address}]
+
+    async def primary_name(address):
+        return {"name": "primary"}
+
+    async def search_names(query, **kwargs):
+        return [{"name": query}]
+
+    async def list_names(**kwargs):
+        return [{"name": "n"}]
+
+    async def list_names_for_sale(**kwargs):
+        return [{"name": "for-sale"}]
+
+    async def no_limit(_tool):
+        return None
+
+    monkeypatch.setattr(server, "_enforce_rate_limit", no_limit)
+    monkeypatch.setattr(server, "get_names_by_address", names_by_address)
+    monkeypatch.setattr(server, "get_primary_name", primary_name)
+    monkeypatch.setattr(server, "search_names", search_names)
+    monkeypatch.setattr(server, "list_names", list_names)
+    monkeypatch.setattr(server, "list_names_for_sale", list_names_for_sale)
+
+    resp = client.get("/tools/names_by_address/Q" + "1" * 33)
+    assert resp.status_code == 200 and resp.json()[0]["owner"].startswith("Q")
+    assert client.get("/tools/primary_name/Q" + "1" * 33).json()["name"] == "primary"
+    assert client.get("/tools/search_names?query=test").json()[0]["name"] == "test"
+    assert client.get("/tools/list_names").json()[0]["name"] == "n"
+    assert client.get("/tools/list_names_for_sale").json()[0]["name"] == "for-sale"
+
+
+def test_group_and_trade_routes(monkeypatch, client):
+    async def group_members(group_id, **kwargs):
+        return [{"member": "Q" * 34, "group": group_id}]
+
+    async def group_invites_by_address(address):
+        return [{"groupId": 1, "invitee": address}]
+
+    async def hidden_offers(**kwargs):
+        return [{"tradeAddress": "A1"}]
+
+    async def chat_message(signature, **kwargs):
+        return {"signature": signature}
+
+    async def active_chats(address, **kwargs):
+        return {"direct": [{"address": address}]}
+
+    async def no_limit(_tool):
+        return None
+
+    monkeypatch.setattr(server, "_enforce_rate_limit", no_limit)
+    monkeypatch.setattr(server, "get_group_members", group_members)
+    monkeypatch.setattr(server, "get_group_invites_by_address", group_invites_by_address)
+    monkeypatch.setattr(server, "list_hidden_trade_offers", hidden_offers)
+    monkeypatch.setattr(server, "get_chat_message_by_signature", chat_message)
+    monkeypatch.setattr(server, "get_active_chats", active_chats)
+
+    assert client.get("/tools/group/1/members").json()[0]["group"] == 1
+    assert client.get("/tools/group_invites/address/Q" + "1" * 33).json()[0]["groupId"] == 1
+    assert client.get("/tools/hidden_trade_offers").json()[0]["tradeAddress"] == "A1"
+    assert client.get("/tools/chat/message/sig123").json()["signature"] == "sig123"
+    assert client.get("/tools/chat/active/Q" + "1" * 33).json()["direct"][0]["address"].startswith("Q")

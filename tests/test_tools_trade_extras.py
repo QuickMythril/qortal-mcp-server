@@ -82,6 +82,12 @@ async def test_list_hidden_trade_offers_validation_and_errors():
     assert len(offers) == 1
     assert offers[0]["tradeAddress"] == "A1"
 
+    class UnreachableClient:
+        async def fetch_hidden_trade_offers(self, **kwargs):
+            raise NodeUnreachableError("down")
+
+    assert await list_hidden_trade_offers(client=UnreachableClient()) == {"error": "Node unreachable"}
+
 
 @pytest.mark.asyncio
 async def test_get_trade_detail_validation_and_errors():
