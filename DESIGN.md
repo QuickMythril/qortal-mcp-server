@@ -400,9 +400,14 @@ These are candidates for later milestones and are not required for v1: fileci
 
 - `get_online_accounts` – list of currently online minting accounts.
 - DEX views (`get_order_book`, `get_recent_trades` for `/assets/*`).
-- Block / transaction lookup (`get_block`, `get_transaction`).
+- Block/transaction extras still out of scope: `/blocks/signature/{signature}/data`,
+  `/blocks/signature/{signature}/transactions`, `/blocks/child/{signature}`,
+  `/blocks/onlineaccounts/{height}`, `/blocks/signer/{address}`,
+  and transaction helpers like unitfee/fee/convert/raw/process.
 - Higher‑level convenience tools wrapping `search_qdn` for specific services
   (e.g. Q‑Chat, Q‑Mail).
+- Minting info and block signer listings are currently omitted for simplicity/safety; re‑add
+  only if a bounded, low‑impact use case emerges.
 
 ---
 

@@ -22,18 +22,16 @@ All write / state‑changing operations are permanently out of scope.
 This project is in early development.
 
 - **v1 goal**: minimal but useful tool set + stable Python server:
-  - `get_node_status` – node sync / connectivity status
-  - `get_node_info` – version, uptime, node id
-  - `get_node_summary` / `get_node_uptime` – extra admin node views
-  - `get_account_overview` – address info, QORT balance, optional names / assets
-  - `get_balance` – simple QORT / asset balance lookup (optional)
-  - `validate_address` – utility for checking address format
-  - `get_name_info` – single name lookup
-  - `get_names_by_address` – names owned by an address (supports limit/offset/reverse)
-  - `get_primary_name` – primary name for an address
-  - `search_names`, `list_names`, `list_names_for_sale` – name discovery helpers
-  - `list_trade_offers` – open cross‑chain Trade Portal offers
-  - `search_qdn` – constrained search over arbitrary / QDN data
+  - Node: `get_node_status`, `get_node_info`, `get_node_summary`, `get_node_uptime`
+  - Accounts/Names: `get_account_overview`, `get_balance`, `validate_address`, `get_name_info`,
+    `get_names_by_address`, `get_primary_name`, `search_names`, `list_names`, `list_names_for_sale`
+  - Trades: `list_trade_offers` (AT address returned as `tradeAddress`)
+  - QDN: `search_qdn` (metadata only; name/identifier included when present)
+  - Blocks: `get_block_at_timestamp`, `get_block_height`, `get_block_by_height`,
+    `get_block_by_signature`, `get_block_height_by_signature`, `get_first_block`, `get_last_block`,
+    `list_block_summaries`, `list_block_range`
+  - Transactions: `search_transactions`, `get_transaction_by_signature`, `get_transaction_by_reference`,
+    `list_transactions_by_block`, `list_transactions_by_address`, `list_transactions_by_creator`
 
   `get_account_overview` currently returns QORT balance plus names; the
   `assetBalances` field is intentionally left empty in v1 to avoid large payloads.
