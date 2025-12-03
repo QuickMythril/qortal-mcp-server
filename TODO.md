@@ -15,16 +15,16 @@ This list merges the gaps I found and the other CLI agent’s findings. Use it a
 - Add/adjust tests for new parameter handling and validation (especially for the new arbitrary/search and crosschain filters, and offset clamping).
 
 ## New work items (blocks/transactions)
-- Add block/time mapping tools: `/blocks/timestamp/{timestamp}`, `/blocks/height`, `/blocks/byheight/{height}`, `/blocks/summaries`, `/blocks/range/{height}` with chunked limits.
-- Add transaction search tool wrapping `/transactions/search` with Core constraints (txType or address or limit<=20; block ranges only with CONFIRMED); clamp limits.
-- Update MCP manifest/registry and config limits for block summary/range paging; add tests for validation.
+- Add block/time mapping tools: `/blocks/timestamp/{timestamp}`, `/blocks/height`, `/blocks/byheight/{height}`, `/blocks/summaries`, `/blocks/range/{height}` with chunked limits. ✅ implemented
+- Add transaction search tool wrapping `/transactions/search` with Core constraints (txType or address or limit<=20; block ranges only with CONFIRMED); clamp limits. ✅ implemented
+- Update MCP manifest/registry and config limits for block summary/range paging; add tests for validation. ✅ implemented
 
 ## Block/transaction fixes (in progress)
 - `get_block_at_timestamp`: mapped BLOCK_UNKNOWN/404/400 “block not found” responses to “No block at or before timestamp.” (retest genesis-edge).
 - `list_block_signers`: removed from MCP surface for now; if re-enabled later, include limit/offset/reverse with safe defaults and verify `/blocks/signers` wiring.
 - `get_minting_info_by_height`: removed from MCP surface for now; only re-add if we need minting info, with clear error mapping for missing/invalid heights.
-- `list_transactions_by_creator`: added explicit confirmationStatus requirement earlier; now also maps INVALID_PUBLIC_KEY to a clear error. Re-test against Core.
-- `list_transactions_by_block`: added limit/offset/reverse params with clamping and improved block-not-found mapping; retest against tip blocks/signature edge cases.
+- `list_transactions_by_creator`: validation fixed (confirmationStatus required; invalid public key mapped). ✅ implemented; live retest optional.
+- `list_transactions_by_block`: added limit/offset/reverse params with clamping and improved block-not-found mapping. ✅ implemented; live retest optional.
 
 ## Trade validation (pending)
 - Validate `get_trade_detail` against live offers now that AT addresses are surfaced; add AT-format validation if needed. Optional but useful for end-to-end sanity.
@@ -36,8 +36,4 @@ This list merges the gaps I found and the other CLI agent’s findings. Use it a
 
 ## New tasks from latest review
 - QDN publisher field: confirm Core search payload; if present, include `publisher` in search_qdn outputs and update DESIGN to match (else document intentional omission).
-- Name listing defaults: in name normalization, default `isForSale` to False when missing; keep `salePrice` null if absent. Add tests.
-- Trade offer docs: clarify that `tradeAddress` is the AT address; current mapping supersedes the “creator trade address” suggestion.
 - Asset balances roadmap: keep TODO to add limited assetBalances to account overview in a future iteration.
-- MCP initialize test: add JSON-RPC `/mcp` initialize integration test to assert envelope fields.
-- Docs cleanup: ensure DESIGN/README reflect current outputs (search_qdn example fixed; trade address semantics documented).
