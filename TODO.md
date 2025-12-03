@@ -7,6 +7,9 @@ Use this as the working checklist. Completed items should be removed when done.
 - Add/update tests alongside code changes (validation, limits, mappings).
 - Document intentional omissions/constraints when deferring endpoints or fields.
 
+## Major feature: Public node fallback / NodePool
+- Implement NodePool-based multi-node fallback per `MCP_FALLBACK_PLAN.md` (config flags for public nodes, API-key handling, per-node health/timeout policy, `_request` retry on network errors only, shutdown cleanup, tests, and docs updates).
+
 ## Bug fixes / correctness (highest priority)
 - None open.
 

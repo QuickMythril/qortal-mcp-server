@@ -47,6 +47,9 @@ This project is in early development.
   optional endpoints (e.g., block signers, minting info) are listed in
   `DESIGN.md`.
 
+  Planned: optional public-node fallback/NodePool (opt-in; defaults to local-only). See `DESIGN.md`
+  for policy and configuration notes.
+
 The first implementation milestone focuses only on `get_node_status` and
 `get_account_overview`, then expands from there.
 
@@ -61,13 +64,21 @@ For full details, see **`DESIGN.md`**.
 - Tool inputs are validated (addresses, names, service codes, limits, etc.).
 - Outputs are trimmed and normalized for LLMs (no huge binary blobs, no logs,
   no sensitive node details).
-- The Qortal Core API key (if required) is kept server‑side and never returned
+- The Qortal Core API key (if required) is kept server-side and never returned
   to callers.
 
 The full security model is documented in **`DESIGN.md`** and enforced via the
 rules in **`AGENTS.md`**.
 
-## High‑level architecture
+## Public node fallback (opt-in, planned)
+
+- Default behavior remains single-node/local. Fallback to public nodes must be explicitly enabled.
+- Enable via env: `QORTAL_ALLOW_PUBLIC_FALLBACK=true` plus a comma-separated `QORTAL_PUBLIC_NODES` list (e.g., `https://api.qortal.org`).
+- Policy: primary-first; retry another node only on network errors (connection/timeout). Any real HTTP response (including 401/4xx/5xx) stops retries.
+- API key: only sent to the trusted local node; never forwarded to public nodes. Admin endpoints may still fail on fallback due to missing auth.
+- Trust note: public nodes change the trust model for read-only data; enable only if you accept that tradeoff. See `DESIGN.md` for details.
+
+## High-level architecture
 
 - Python 3.11+
 - HTTP server: FastAPI + Uvicorn (or equivalent ASGI server)

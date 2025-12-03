@@ -651,6 +651,15 @@ These are candidates for later milestones and are not required for v1: fileci
 - Some admin endpoints (e.g. `/admin/status`) may require an API key; this is
   loaded from configuration and attached only where necessary. fileciteturn0file0
 
+#### Public node fallback / NodePool (planned)
+
+- Goal: primary-first failover that retries another node only on network failures (connection/timeout); any real HTTP response (including 4xx/5xx/401) stops retries.
+- Health/cooldown: track per-node health; skip recently failed nodes for a short cooldown; optionally probe `/blocks/height` as a lightweight reachability check within the existing whitelist and rate philosophy.
+- API key handling: never send the local API key to public nodes; admin endpoints may fail on fallback with `Unauthorized`, which is expected.
+- Configuration: opt-in via env—`QORTAL_ALLOW_PUBLIC_FALLBACK` (default `false`) and `QORTAL_PUBLIC_NODES` (comma-separated list). When disabled, behavior stays single-node/local.
+- Trust note: using public nodes shifts trust for read-only data; operators should enable fallback only if comfortable with that tradeoff.
+- Testing: add unit coverage for primary network failure → fallback success, all-nodes-down → unreachable, and admin endpoints returning `Unauthorized` on public fallback.
+
 ### 4.2 Internal layout
 
 Target module layout:
