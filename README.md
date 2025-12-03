@@ -28,6 +28,7 @@ This project is in early development.
   - Accounts/Names: `get_account_overview`, `get_balance`, `validate_address`, `get_name_info`,
     `get_names_by_address`, `get_primary_name`, `search_names`, `list_names`, `list_names_for_sale`
   - Trades: `list_trade_offers` (AT address returned as `tradeAddress`)
+  - Hidden trades: `list_hidden_trade_offers` (failed Trade Portal offers, limited)
   - QDN: `search_qdn` (metadata only; name/identifier included when present)
   - Chat: `get_chat_messages`, `count_chat_messages`, `get_chat_message_by_signature`,
     `get_active_chats` (optional `decode_text=true` decodes plaintext when safe)
@@ -175,6 +176,9 @@ curl "http://localhost:8000/tools/chat/messages?involving=Qaddress1&involving=Qa
 
 # Chat with decoded plaintext (when not encrypted)
 curl "http://localhost:8000/tools/chat/messages?involving=Qaddress1&involving=Qaddress2&limit=5&decode_text=true"
+
+# Hidden trade offers (limit=3)
+curl "http://localhost:8000/tools/hidden_trade_offers?limit=3"
 ```
 
 ## MCP integration (initialize + tools)

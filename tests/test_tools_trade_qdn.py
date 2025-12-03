@@ -3,7 +3,7 @@ import qortal_mcp.tools.names  # used for internal normalization helper
 
 from qortal_mcp.config import QortalConfig
 from qortal_mcp.tools.qdn import search_qdn
-from qortal_mcp.tools.trade import list_trade_offers, get_trade_detail
+from qortal_mcp.tools.trade import list_trade_offers, list_hidden_trade_offers, get_trade_detail
 from qortal_mcp.qortal_api import UnauthorizedError
 from qortal_mcp.qortal_api.client import NodeUnreachableError, QortalApiError
 
@@ -99,6 +99,21 @@ async def test_list_trade_offers_unexpected_error():
 
     offers = await list_trade_offers(client=StubClient())
     assert offers == {"error": "Unexpected error while retrieving trade offers."}
+
+
+@pytest.mark.asyncio
+async def test_list_hidden_trade_offers_clamps_and_filters_blockchain():
+    class StubClient:
+        async def fetch_hidden_trade_offers(self, *, foreign_blockchain=None):
+            return [{"tradeAddress": f"addr-{i}"} for i in range(5)]
+
+    cfg = QortalConfig(max_trade_offers=2, default_trade_offers=2)
+    offers = await list_hidden_trade_offers(limit=10, client=StubClient(), config=cfg)
+    assert isinstance(offers, list)
+    assert len(offers) == 2
+
+    offers = await list_hidden_trade_offers(foreign_blockchain="INVALID", client=StubClient())
+    assert offers == {"error": "Invalid foreign blockchain."}
 
 
 @pytest.mark.asyncio

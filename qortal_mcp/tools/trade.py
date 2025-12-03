@@ -118,9 +118,17 @@ async def list_trade_offers(
 async def list_hidden_trade_offers(
     *,
     foreign_blockchain: Optional[str] = None,
+    limit: Optional[int] = None,
     client=default_client,
+    config: QortalConfig = default_config,
 ) -> List[Dict[str, Any]] | Dict[str, str]:
     """List hidden cross-chain trade offers (failed offers)."""
+    effective_limit = clamp_limit(
+        limit,
+        default=config.default_trade_offers,
+        max_value=config.max_trade_offers,
+    )
+
     allowed_blockchains = {
         "BITCOIN",
         "LITECOIN",
@@ -149,10 +157,10 @@ async def list_hidden_trade_offers(
 
     offers: List[Dict[str, Any]] = []
     if isinstance(raw_offers, list):
-        for entry in raw_offers:
+        for entry in raw_offers[:effective_limit]:
             if isinstance(entry, dict):
                 offers.append(_normalize_offer(entry))
-    return offers
+    return offers[:effective_limit]
 
 
 async def get_trade_detail(

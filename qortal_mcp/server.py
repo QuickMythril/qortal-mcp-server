@@ -348,6 +348,18 @@ async def trade_offers(request: Request, limit: int | None = Query(None, ge=0)) 
     return JSONResponse(content=result)
 
 
+@app.get("/tools/hidden_trade_offers")
+async def hidden_trade_offers(request: Request, limit: int | None = Query(None, ge=0)) -> JSONResponse:
+    """Proxy for list_hidden_trade_offers tool."""
+    limited = await _enforce_rate_limit("list_hidden_trade_offers")
+    if limited:
+        return limited
+    result = await list_hidden_trade_offers(limit=limit)
+    request_id = getattr(request.state, "request_id", None)
+    _log_tool_result("list_hidden_trade_offers", result if isinstance(result, dict) else {}, request_id)
+    return JSONResponse(content=result)
+
+
 @app.get("/tools/groups")
 async def groups_route(
     request: Request,

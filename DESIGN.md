@@ -363,6 +363,25 @@ status. fileciteturn0file0
 
 - `GET /crosschain/tradeoffers?limit={limit}`
 
+#### `list_hidden_trade_offers` (v1)
+
+**Purpose** – List hidden/failed cross‑chain Trade Portal offers (read‑only).
+
+**Inputs**
+
+- `limit` (integer, optional; default e.g. 50, maximum 100; client-side truncation since Core endpoint has no limit)
+- `foreign_blockchain` (string, optional; e.g., BITCOIN, LITECOIN)
+
+**Outputs** – same normalized shape as `list_trade_offers`
+
+**Qortal endpoint**
+
+- `GET /crosschain/tradeoffers/hidden`
+
+Notes:
+- Results are truncated client-side to configured limits to avoid large payloads.
+- Validation of `foreign_blockchain` matches allowed set (BTC/LTC/DOGE/DGB/RVN/ARRR).
+
 ### 3.5 Chat tools
 
 #### `get_chat_messages` (v1)

@@ -373,11 +373,13 @@ TOOL_REGISTRY: Dict[str, ToolDefinition] = {
         name="list_hidden_trade_offers",
         description="List hidden cross-chain trade offers.",
         params={
+            "limit": "integer (optional)",
             "foreign_blockchain": "string (optional, e.g., BITCOIN/LITECOIN)",
         },
         input_schema={
             "type": "object",
             "properties": {
+                "limit": _limit_schema(default_config.max_trade_offers),
                 "foreign_blockchain": {
                     "type": "string",
                     "description": "Optional foreign blockchain filter (e.g., BITCOIN, LITECOIN)",
