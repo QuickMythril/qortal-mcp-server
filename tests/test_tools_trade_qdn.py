@@ -3,7 +3,7 @@ import qortal_mcp.tools.names  # used for internal normalization helper
 
 from qortal_mcp.config import QortalConfig
 from qortal_mcp.tools.qdn import search_qdn
-from qortal_mcp.tools.trade import list_trade_offers
+from qortal_mcp.tools.trade import list_trade_offers, get_trade_detail
 from qortal_mcp.qortal_api import UnauthorizedError
 from qortal_mcp.qortal_api.client import NodeUnreachableError, QortalApiError
 
@@ -99,6 +99,28 @@ async def test_list_trade_offers_unexpected_error():
 
     offers = await list_trade_offers(client=StubClient())
     assert offers == {"error": "Unexpected error while retrieving trade offers."}
+
+
+@pytest.mark.asyncio
+async def test_get_trade_detail_validation_and_not_found():
+    assert await get_trade_detail(at_address="") == {"error": "AT address is required."}
+    assert await get_trade_detail(at_address="Qbad") == {"error": "Invalid AT address."}
+
+    class StubClient:
+        async def fetch_trade_detail(self, at_address: str):
+            raise NodeUnreachableError("down")
+
+    result = await get_trade_detail(at_address="A" * 32, client=StubClient())
+    assert result == {"error": "Node unreachable"}
+
+    class NotFoundClient:
+        async def fetch_trade_detail(self, at_address: str):
+            from qortal_mcp.qortal_api import AddressNotFoundError
+
+            raise AddressNotFoundError("missing", code="ADDRESS_UNKNOWN")
+
+    result = await get_trade_detail(at_address="A" * 32, client=NotFoundClient())
+    assert result == {"error": "Trade not found."}
 
 
 @pytest.mark.asyncio

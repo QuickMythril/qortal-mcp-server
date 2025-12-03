@@ -8,6 +8,7 @@ from typing import Any, Dict, List, Optional
 
 from qortal_mcp.config import QortalConfig, default_config
 from qortal_mcp.qortal_api import (
+    AddressNotFoundError,
     NodeUnreachableError,
     QortalApiError,
     UnauthorizedError,
@@ -162,15 +163,20 @@ async def get_trade_detail(
     """Fetch detailed trade info for a specific AT address."""
     if not at_address or not isinstance(at_address, str):
         return {"error": "AT address is required."}
-    if not _is_base58(at_address, min_len=32, max_len=36):
+    normalized = at_address.strip()
+    if not normalized.startswith("A") or not _is_base58(normalized, min_len=32, max_len=36):
         return {"error": "Invalid AT address."}
     try:
-        raw = await client.fetch_trade_detail(at_address)
+        raw = await client.fetch_trade_detail(normalized)
+    except AddressNotFoundError:
+        return {"error": "Trade not found."}
     except UnauthorizedError:
         return {"error": "Unauthorized or API key required."}
     except NodeUnreachableError:
         return {"error": "Node unreachable"}
-    except QortalApiError:
+    except QortalApiError as exc:
+        if exc.code in {"ADDRESS_UNKNOWN"} or exc.status_code == 404:
+            return {"error": "Trade not found."}
         return {"error": "Qortal API error."}
     except Exception:
         logger.exception("Unexpected error fetching trade detail for %s", at_address)
