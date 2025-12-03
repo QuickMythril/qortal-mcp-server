@@ -11,7 +11,7 @@ from qortal_mcp.qortal_api.client import NodeUnreachableError, QortalApiError
 @pytest.mark.asyncio
 async def test_list_trade_offers_clamps_limit():
     class StubClient:
-        async def fetch_trade_offers(self, *, limit: int):
+        async def fetch_trade_offers(self, *, limit: int, **kwargs):
             return [{"tradeAddress": f"addr-{i}"} for i in range(30)]
 
     # Clamp to config.max_trade_offers (5) even if caller requests more.
@@ -24,7 +24,7 @@ async def test_list_trade_offers_clamps_limit():
 @pytest.mark.asyncio
 async def test_list_trade_offers_unauthorized_error():
     class StubClient:
-        async def fetch_trade_offers(self, *, limit: int):
+        async def fetch_trade_offers(self, *, limit: int, **kwargs):
             raise UnauthorizedError("Unauthorized", status_code=401)
 
     result = await list_trade_offers(client=StubClient())
@@ -44,14 +44,15 @@ async def test_list_trade_offers_normalizes_core_fields():
     }
 
     class StubClient:
-        async def fetch_trade_offers(self, *, limit: int):
+        async def fetch_trade_offers(self, *, limit: int, **kwargs):
             return [core_style_offer]
 
     offers = await list_trade_offers(client=StubClient())
     assert offers == [
         {
-            "tradeAddress": "QT123",
+            "tradeAddress": "AT456",
             "creator": "QCREATOR",
+            "creatorTradeAddress": "QT123",
             "offeringQort": "5",
             "expectedForeign": "0.1",
             "foreignCurrency": "LTC",
@@ -66,7 +67,7 @@ async def test_list_trade_offers_skips_non_dict_and_handles_unreachable():
     class StubClient:
         calls = 0
 
-        async def fetch_trade_offers(self, *, limit: int):
+        async def fetch_trade_offers(self, *, limit: int, **kwargs):
             StubClient.calls += 1
             if StubClient.calls == 1:
                 return ["not-a-dict"]
@@ -83,7 +84,7 @@ async def test_list_trade_offers_skips_non_dict_and_handles_unreachable():
 @pytest.mark.asyncio
 async def test_list_trade_offers_api_error():
     class StubClient:
-        async def fetch_trade_offers(self, *, limit: int):
+        async def fetch_trade_offers(self, *, limit: int, **kwargs):
             raise QortalApiError("fail")
 
     offers = await list_trade_offers(client=StubClient())
@@ -93,7 +94,7 @@ async def test_list_trade_offers_api_error():
 @pytest.mark.asyncio
 async def test_list_trade_offers_unexpected_error():
     class StubClient:
-        async def fetch_trade_offers(self, *, limit: int):
+        async def fetch_trade_offers(self, *, limit: int, **kwargs):
             raise Exception("boom")
 
     offers = await list_trade_offers(client=StubClient())
@@ -155,7 +156,7 @@ async def test_qdn_service_only_ok():
             return [{"signature": "s", "service": service, "timestamp": 1}]
 
     result = await search_qdn(service=1, start_block=1, block_limit=10, client=StubClient())
-    assert result and result[0]["service"] == 1
+    assert result and result[0]["service"] == "AUTO_UPDATE"
 
 
 @pytest.mark.asyncio
@@ -165,7 +166,7 @@ async def test_qdn_address_and_service_ok():
             return [{"signature": "s", "service": service, "timestamp": 1}]
 
     result = await search_qdn(address="QgB7zMfujQMLkisp1Lc8PBkVYs75sYB3vV", service=1, start_block=1, block_limit=10, client=StubClient())
-    assert result and result[0]["service"] == 1
+    assert result and result[0]["service"] == "AUTO_UPDATE"
 
 
 @pytest.mark.asyncio
@@ -174,7 +175,7 @@ async def test_qdn_node_unreachable():
         async def search_qdn(self, *, address=None, service=None, limit=None, **kwargs):
             raise NodeUnreachableError("down")
 
-    result = await search_qdn(address="QgB7zMfujQMLkisp1Lc8PBkVYs75sYB3vV", client=StubClient())
+    result = await search_qdn(address="QgB7zMfujQMLkisp1Lc8PBkVYs75sYB3vV", start_block=1, block_limit=10, client=StubClient())
     assert result == {"error": "Node unreachable"}
 
 
@@ -184,7 +185,7 @@ async def test_qdn_unexpected_error():
         async def search_qdn(self, *, address=None, service=None, limit=None, **kwargs):
             raise QortalApiError("boom")
 
-    result = await search_qdn(address="QgB7zMfujQMLkisp1Lc8PBkVYs75sYB3vV", client=StubClient())
+    result = await search_qdn(address="QgB7zMfujQMLkisp1Lc8PBkVYs75sYB3vV", start_block=1, block_limit=10, client=StubClient())
     assert result == {"error": "Qortal API error."}
 
 
@@ -194,5 +195,5 @@ async def test_qdn_unauthorized():
         async def search_qdn(self, *, address=None, service=None, limit=None, **kwargs):
             raise UnauthorizedError("nope")
 
-    result = await search_qdn(address="QgB7zMfujQMLkisp1Lc8PBkVYs75sYB3vV", client=StubClient())
+    result = await search_qdn(address="QgB7zMfujQMLkisp1Lc8PBkVYs75sYB3vV", start_block=1, block_limit=10, client=StubClient())
     assert result == {"error": "Unauthorized or API key required."}

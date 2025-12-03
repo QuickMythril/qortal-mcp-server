@@ -165,7 +165,7 @@ async def test_txs_by_address_invalid():
 @pytest.mark.asyncio
 async def test_txs_by_creator_invalid_key():
     assert await list_transactions_by_creator("bad") == {"error": "Invalid public key."}
-    assert await list_transactions_by_creator("QgB7zMfujQMLkisp1Lc8PBkVYs75sYB3vV") == {
+    assert await list_transactions_by_creator("6nHvEmQJ52LaoYxCxu32cLRbp394ziKET6rkh7F5Cyok") == {
         "error": "confirmationStatus is required."
     }
 

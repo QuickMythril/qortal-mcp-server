@@ -16,7 +16,7 @@ from qortal_mcp.qortal_api.client import NameNotFoundError, UnauthorizedError, N
 
 @pytest.mark.asyncio
 async def test_get_name_info_invalid_name():
-    result = await get_name_info("!!bad")
+    result = await get_name_info(" bad")
     assert result == {"error": "Invalid name."}
 
 
@@ -267,7 +267,7 @@ async def test_list_names_happy_path():
             "data": None,
             "registeredWhen": 5,
             "updatedWhen": 6,
-            "isForSale": None,
+            "isForSale": False,
             "salePrice": None,
         }
     ]

@@ -12,7 +12,7 @@ def test_address_validation():
 def test_name_validation():
     assert validators.is_valid_qortal_name("valid-name_123")
     assert not validators.is_valid_qortal_name("no")  # too short
-    assert not validators.is_valid_qortal_name("!bad")  # invalid char
+    assert not validators.is_valid_qortal_name(" bad")  # leading space fails normalization
 
 
 def test_clamp_limit():

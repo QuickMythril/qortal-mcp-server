@@ -81,11 +81,18 @@ async def search_transactions(
     if address and not is_valid_qortal_address(address):
         return {"error": "Invalid Qortal address."}
 
+    requested_limit: Optional[int] = None
+    if limit is not None:
+        try:
+            requested_limit = int(limit)
+        except (TypeError, ValueError):
+            requested_limit = None
+
     effective_limit = clamp_limit(limit, default=config.default_tx_search, max_value=config.max_tx_search)
     effective_offset = clamp_limit(offset, default=0, max_value=config.max_tx_search)
 
-    if not normalized_tx_types and not address and effective_limit > config.max_tx_search:
-        # Core requires txType/address or limit<=20; we clamp limit to max_tx_search, so enforce that here.
+    if not normalized_tx_types and not address and requested_limit is not None and requested_limit > config.max_tx_search:
+        # Core requires txType/address or limit<=20; enforce based on caller's requested limit before clamping.
         return {"error": "txType or address is required when limit exceeds 20."}
 
     try:

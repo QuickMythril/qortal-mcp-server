@@ -25,7 +25,8 @@ def test_rate_limit_mcp_list_tools(client, monkeypatch):
     monkeypatch.setattr(server_mod.rate_limiter, "allow", deny)
     resp = client.post("/mcp", json={"jsonrpc": "2.0", "id": 1, "method": "list_tools"})
     assert resp.status_code == 429
-    assert resp.json()["error"] == "Rate limit exceeded"
+    body = resp.json()
+    assert body["error"]["message"] == "Rate limit exceeded"
 
 
 def test_metrics_increments_requests(client):
@@ -54,10 +55,11 @@ def test_trade_offers_route_normalizes_fields(client, monkeypatch):
     from qortal_mcp.tools import trade as trade_mod
 
     class StubClient:
-        async def fetch_trade_offers(self, *, limit: int):
+        async def fetch_trade_offers(self, *, limit: int, **kwargs):
             return [
                 {
                     "qortalCreatorTradeAddress": "QT123",
+                    "qortalAtAddress": "AT456",
                     "qortalCreator": "QCREATOR",
                     "creationTimestamp": 42,
                     "foreignBlockchain": "DOGE",
@@ -73,7 +75,7 @@ def test_trade_offers_route_normalizes_fields(client, monkeypatch):
     resp = client.get("/tools/trade_offers")
     assert resp.status_code == 200
     offers = resp.json()
-    assert offers[0]["tradeAddress"] == "QT123"
+    assert offers[0]["tradeAddress"] == "AT456"
     assert offers[0]["creator"] == "QCREATOR"
     assert offers[0]["foreignCurrency"] == "DOGE"
     assert offers[0]["timestamp"] == 42
