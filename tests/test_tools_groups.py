@@ -44,6 +44,22 @@ async def test_groups_by_owner_requires_valid_address():
 
 
 @pytest.mark.asyncio
+async def test_groups_by_member_success_and_unreachable():
+    class StubClient:
+        async def fetch_groups_by_member(self, address: str):
+            return [{"groupId": 1, "groupName": "demo", "owner": address, "memberCount": 2}]
+
+    result = await get_groups_by_member(address="Q" * 34, client=StubClient())
+    assert result[0]["id"] == 1
+
+    class FailClient:
+        async def fetch_groups_by_member(self, address: str):
+            raise NodeUnreachableError("down")
+
+    assert await get_groups_by_member(address="Q" * 34, client=FailClient()) == {"error": "Node unreachable"}
+
+
+@pytest.mark.asyncio
 async def test_group_detail_invalid_and_not_found():
     assert await get_group(group_id="x") == {"error": "Invalid group id."}
 

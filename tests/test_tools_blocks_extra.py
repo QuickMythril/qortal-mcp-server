@@ -48,3 +48,13 @@ async def test_first_last_block_error():
             raise NodeUnreachableError("down")
 
     assert await get_last_block(client=FailClient2()) == {"error": "Node unreachable"}
+
+
+@pytest.mark.asyncio
+async def test_block_by_signature_success():
+    class StubClient:
+        async def fetch_block_by_signature(self, signature: str):
+            return {"signature": signature, "height": 5}
+
+    result = await get_block_by_signature(signature="s" * 44, client=StubClient())
+    assert result["height"] == 5
