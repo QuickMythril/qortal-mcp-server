@@ -17,7 +17,7 @@ from qortal_mcp.tools import (
 
 LIVE = os.getenv("LIVE_QORTAL") in {"1", "true", "yes"}
 SAMPLE_ADDRESS = os.getenv("QORTAL_SAMPLE_ADDRESS", "QgB7zMfujQMLkisp1Lc8PBkVYs75sYB3vV")
-SAMPLE_NAME = os.getenv("QORTAL_SAMPLE_NAME")
+SAMPLE_NAME = os.getenv("QORTAL_SAMPLE_NAME", "AGAPE")
 
 
 pytestmark = pytest.mark.skipif(not LIVE, reason="Live Qortal integration tests are disabled")
