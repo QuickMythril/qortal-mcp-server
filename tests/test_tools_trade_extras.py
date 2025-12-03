@@ -74,6 +74,17 @@ async def test_get_trade_detail_unexpected_response():
 
 
 @pytest.mark.asyncio
+async def test_list_completed_trades_invalid_public_key_and_unreachable():
+    assert await list_completed_trades(buyer_public_key="bad") == {"error": "Invalid public key."}
+
+    class FailClient:
+        async def fetch_completed_trades(self, **kwargs):
+            raise NodeUnreachableError("down")
+
+    assert await list_completed_trades(client=FailClient()) == {"error": "Node unreachable"}
+
+
+@pytest.mark.asyncio
 async def test_get_trade_ledger_validation_and_errors():
     result = await get_trade_ledger(public_key="")
     assert result == {"error": "Public key is required."}

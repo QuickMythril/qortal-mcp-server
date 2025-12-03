@@ -200,3 +200,13 @@ async def test_chat_message_by_signature_error_mapping():
 async def test_chat_messages_decode_text_type_validation():
     result = await get_chat_messages(involving=["Q" * 34, "Q" * 34], decode_text="yes")
     assert result == {"error": "decode_text must be boolean."}
+
+
+@pytest.mark.asyncio
+async def test_chat_messages_unexpected_response():
+    class StubClient:
+        async def fetch_chat_messages(self, **kwargs):
+            return "not-a-list"
+
+    result = await get_chat_messages(involving=["Q" * 34, "Q" * 34], client=StubClient())
+    assert result == []

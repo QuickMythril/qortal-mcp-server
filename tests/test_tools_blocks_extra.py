@@ -45,6 +45,15 @@ async def test_block_height_by_signature_error_mapping():
 
 
 @pytest.mark.asyncio
+async def test_block_by_signature_unexpected_response():
+    class StubClient:
+        async def fetch_block_by_signature(self, signature: str):
+            raise QortalApiError("oops")
+
+    assert await get_block_by_signature(signature="s" * 44, client=StubClient()) == {"error": "Qortal API error."}
+
+
+@pytest.mark.asyncio
 async def test_first_last_block_error():
     class FailClient:
         async def fetch_first_block(self):

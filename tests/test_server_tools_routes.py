@@ -151,6 +151,9 @@ def test_group_and_trade_routes(monkeypatch, client):
     async def qdn_search(**kwargs):
         return [{"name": "item"}]
 
+    async def account_overview(address, include_assets=False, asset_ids=None):
+        return {"address": address, "assets": asset_ids if include_assets else []}
+
     async def no_limit(_tool):
         return None
 
@@ -161,6 +164,7 @@ def test_group_and_trade_routes(monkeypatch, client):
     monkeypatch.setattr(server, "get_chat_message_by_signature", chat_message)
     monkeypatch.setattr(server, "get_active_chats", active_chats)
     monkeypatch.setattr(server, "search_qdn", qdn_search)
+    monkeypatch.setattr(server, "get_account_overview", account_overview)
 
     assert client.get("/tools/group/1/members").json()[0]["group"] == 1
     assert client.get("/tools/group_invites/address/Q" + "1" * 33).json()[0]["groupId"] == 1
@@ -168,3 +172,5 @@ def test_group_and_trade_routes(monkeypatch, client):
     assert client.get("/tools/chat/message/sig123").json()["signature"] == "sig123"
     assert client.get("/tools/chat/active/Q" + "1" * 33).json()["direct"][0]["address"].startswith("Q")
     assert client.get("/tools/qdn_search").json()[0]["name"] == "item"
+    assets_out = client.get("/tools/account_overview/Q" + "1" * 33 + "?include_assets=true&asset_ids=7").json()["assets"]
+    assert assets_out in ([7], ["7"])
