@@ -409,6 +409,20 @@ These are candidates for later milestones and are not required for v1: fileci
 - Minting info and block signer listings are currently omitted for simplicity/safety; re‑add
   only if a bounded, low‑impact use case emerges.
 
+### 3.7 Deliberately omitted for v1
+
+- State-changing or signing endpoints (transaction create/sign/broadcast/process, fee/unitfee helpers,
+  raw decode) remain out of scope by design to keep the surface read-only.
+- Block minter info (`/blocks/byheight/{height}/mintinginfo`) and block signers (`/blocks/signers`)
+  were removed from the MCP surface due to low value and potential load; only reintroduce with
+  tight limits and a clear use case.
+- Crosschain hidden offers (`/crosschain/tradeoffers/hidden`) are not exposed yet; add only if a
+  clear LLM use case arises and limits are in place.
+- QDN publisher field is not returned in `search_qdn` results; include it only after confirming the
+  Core payload and privacy implications.
+- Account overview omits `assetBalances` beyond QORT to avoid large payloads; consider a bounded
+  subset in a future iteration.
+
 ---
 
 ## 4. Architecture

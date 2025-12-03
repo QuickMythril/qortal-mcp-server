@@ -34,7 +34,9 @@ This project is in early development.
     `list_transactions_by_block`, `list_transactions_by_address`, `list_transactions_by_creator`
 
   `get_account_overview` currently returns QORT balance plus names; the
-  `assetBalances` field is intentionally left empty in v1 to avoid large payloads.
+  `assetBalances` field is intentionally left empty in v1 to avoid large payloads. Other omitted or
+  optional endpoints (e.g., hidden trade offers, block signers, minting info) are listed in
+  `DESIGN.md`.
 
 The first implementation milestone focuses only on `get_node_status` and
 `get_account_overview`, then expands from there.
