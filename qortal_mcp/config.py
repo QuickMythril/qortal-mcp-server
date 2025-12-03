@@ -16,6 +16,9 @@ from typing import Optional
 # Default connection settings
 DEFAULT_BASE_URL = os.getenv("QORTAL_BASE_URL", "http://localhost:12391")
 ALLOW_PUBLIC_FALLBACK = os.getenv("QORTAL_ALLOW_PUBLIC_FALLBACK", "false").lower() == "true"
+FALLBACK_COOLDOWN_SECONDS = float(os.getenv("QORTAL_FALLBACK_COOLDOWN_SECONDS", "30"))
+FALLBACK_HEALTH_CHECK_PATH = os.getenv("QORTAL_FALLBACK_HEALTH_CHECK_PATH", "/blocks/height")
+FALLBACK_HEALTH_CHECK_TIMEOUT = float(os.getenv("QORTAL_FALLBACK_HEALTH_CHECK_TIMEOUT", "2"))
 
 
 def _parse_public_nodes(raw: str) -> list[str]:
@@ -140,6 +143,9 @@ class QortalConfig:
     per_tool_rate_limits: dict[str, float] = field(default_factory=dict)
     public_nodes: list[str] = field(default_factory=lambda: list(DEFAULT_PUBLIC_NODES))
     allow_public_fallback: bool = ALLOW_PUBLIC_FALLBACK
+    fallback_cooldown_seconds: float = FALLBACK_COOLDOWN_SECONDS
+    fallback_health_check_path: str = FALLBACK_HEALTH_CHECK_PATH
+    fallback_health_check_timeout: float = FALLBACK_HEALTH_CHECK_TIMEOUT
 
 
 default_config = QortalConfig()

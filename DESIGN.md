@@ -654,9 +654,9 @@ These are candidates for later milestones and are not required for v1: fileci
 #### Public node fallback / NodePool (opt-in, experimental)
 
 - Goal: primary-first failover that retries another node only on network failures (connection/timeout); any real HTTP response (including 4xx/5xx/401) stops retries.
-- Health/cooldown: track per-node health; skip recently failed nodes for a short cooldown (~30s default); optionally probe `/blocks/height` as a lightweight reachability check within the existing whitelist and rate philosophy.
+- Health/cooldown: track per-node health; skip recently failed nodes for a short cooldown (~30s default); optionally probe `/blocks/height` (default) as a lightweight reachability check within the existing whitelist and rate philosophy.
 - API key handling: never send the local API key to public nodes; admin endpoints may fail on fallback with `Unauthorized`, which is expected.
-- Configuration: opt-in via env—`QORTAL_ALLOW_PUBLIC_FALLBACK` (default `false`) and `QORTAL_PUBLIC_NODES` (comma-separated list). When disabled, behavior stays single-node/local.
+- Configuration: opt-in via env—`QORTAL_ALLOW_PUBLIC_FALLBACK` (default `false`) and `QORTAL_PUBLIC_NODES` (comma-separated list). Optional tuning: `QORTAL_FALLBACK_COOLDOWN_SECONDS` (~30 default), `QORTAL_FALLBACK_HEALTH_CHECK_PATH` (default `/blocks/height`), `QORTAL_FALLBACK_HEALTH_CHECK_TIMEOUT` (default ~2s). When disabled, behavior stays single-node/local.
 - Trust note: using public nodes shifts trust for read-only data; operators should enable fallback only if comfortable with that tradeoff.
 - Testing: add unit coverage for primary network failure → fallback success, all-nodes-down → unreachable, and admin endpoints returning `Unauthorized` on public fallback.
 

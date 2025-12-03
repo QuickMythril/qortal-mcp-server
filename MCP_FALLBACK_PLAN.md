@@ -132,20 +132,20 @@ https://github.com/QuickMythril/qortal-mcp-server/blob/e6ac1024debd0a4b32782ee65
 - [x] NodePool implementation
   - [x] Create NodePool to hold ordered node list (primary + public), per-node `AsyncClient`s, and health state with cooldown timestamps.
   - [x] Implement success/failure reporting to mark nodes healthy/unhealthy; skip recently failed nodes until cooldown expires.
-  - [ ] Add optional lightweight health check target (e.g., `/blocks/height`) guarded by existing endpoint whitelist and rate-limit concerns.
+  - [x] Add optional lightweight health check target (e.g., `/blocks/height`) guarded by existing endpoint whitelist and rate-limit concerns.
 - [x] Request routing changes
   - [x] Update `_request` to iterate nodes on network errors only (connection/timeout); stop on first real HTTP response (even 4xx/5xx).
   - [x] Attach API key only for trusted/local node; never forward key to public nodes.
   - [x] Preserve backward-compatible single-node behavior when `allow_public_fallback` is false.
 - [x] Shutdown/cleanup
   - [x] Update `aclose` to close all NodePool clients; clear references.
-- [ ] Tool behavior verification
-  - [ ] Confirm multi-call tools reuse a healthy fallback within the same invocation after primary is marked down.
-  - [ ] Consider short per-node timeout adjustments or documented guidance to keep total latency bounded during failover.
-- [ ] Tests
+- [x] Tool behavior verification
+  - [x] Confirm multi-call tools reuse a healthy fallback within the same invocation after primary is marked down.
+  - [x] Consider short per-node timeout adjustments or documented guidance to keep total latency bounded during failover.
+- [x] Tests
   - [x] Unit tests for NodePool selection/health marking and client failover (primary network error -> fallback success).
   - [x] Tests for all-nodes-down path (still raises NodeUnreachable) and admin endpoint on public node returning Unauthorized.
-  - [ ] Maintain/update existing unreachable tests; add fixtures/mocks for multi-call tool behavior.
+  - [x] Maintain/update existing unreachable tests; add fixtures/mocks for multi-call tool behavior.
 - [x] Documentation
   - [x] Update `README.md`/`DESIGN.md` with configuration flags, examples, and limitations (admin endpoints may fail on public nodes; trust caveats).
   - [x] Note any timeout/cooldown defaults and health-check behavior; reiterate rate-limit considerations.

@@ -28,7 +28,7 @@ class DummyAsyncClient:
         self.timeout = timeout
         self._behavior = behavior
 
-    async def get(self, path, params=None, headers=None):
+    async def get(self, path, params=None, headers=None, **_kwargs):
         return self._behavior(self.base_url, path, params or {}, headers or {})
 
     async def aclose(self):
@@ -123,5 +123,86 @@ async def test_nodepool_admin_unauthorized_on_fallback(monkeypatch):
 
     assert calls[-1][0] == "http://fallback"
     assert "X-API-KEY" not in calls[-1][1]
+
+    await client.aclose()
+
+
+
+@pytest.mark.asyncio
+async def test_nodepool_skips_primary_after_failure_in_same_session(monkeypatch):
+    calls = []
+
+    def behavior(base_url, path, params, headers):
+        calls.append((base_url, path))
+        if base_url == "http://primary":
+            raise httpx.RequestError("primary down")
+        return DummyResponse(200, {"ok": base_url})
+
+    monkeypatch.setattr(
+        httpx,
+        "AsyncClient",
+        lambda base_url, timeout: DummyAsyncClient(base_url, timeout, behavior),
+    )
+
+    cfg = QortalConfig(
+        base_url="http://primary",
+        public_nodes=["http://fallback"],
+        allow_public_fallback=True,
+    )
+    client = QortalApiClient(config=cfg)
+
+    await client.fetch_address_info("Qabc")
+    await client.fetch_address_balance("Qabc")
+
+    assert calls[0][0] == "http://primary"
+    assert calls[1][0] == "http://fallback"
+    assert calls[2][0] == "http://fallback"
+
+    await client.aclose()
+
+
+@pytest.mark.asyncio
+async def test_nodepool_health_check_recovers_primary(monkeypatch):
+    calls = []
+    fail_primary = {"fail": True}
+    current_time = {"t": 0.0}
+
+    def fake_monotonic():
+        return current_time["t"]
+
+    def behavior(base_url, path, params, headers):
+        calls.append((base_url, path))
+        if base_url == "http://primary" and fail_primary["fail"]:
+            raise httpx.RequestError("primary down")
+        return DummyResponse(200, {"ok": base_url})
+
+    monkeypatch.setattr(
+        httpx,
+        "AsyncClient",
+        lambda base_url, timeout: DummyAsyncClient(base_url, timeout, behavior),
+    )
+    monkeypatch.setattr("qortal_mcp.qortal_api.client.time.monotonic", fake_monotonic)
+
+    cfg = QortalConfig(
+        base_url="http://primary",
+        public_nodes=["http://fallback"],
+        allow_public_fallback=True,
+        fallback_cooldown_seconds=1,
+        fallback_health_check_path="/blocks/height",
+        fallback_health_check_timeout=0.5,
+    )
+    client = QortalApiClient(config=cfg)
+
+    await client.fetch_node_status()
+    assert calls[0] == ("http://primary", "/admin/status")
+    assert calls[1] == ("http://fallback", "/admin/status")
+
+    current_time["t"] = 2
+    fail_primary["fail"] = False
+
+    await client.fetch_node_status()
+
+    assert ("http://primary", "/blocks/height") in calls
+    assert calls[-1] == ("http://primary", "/admin/status")
 
     await client.aclose()

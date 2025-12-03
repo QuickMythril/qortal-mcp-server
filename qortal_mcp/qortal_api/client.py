@@ -64,30 +64,63 @@ class _NodeEntry:
     base_url: str
     client: Optional[httpx.AsyncClient] = None
     last_failure: Optional[float] = None
+    last_health_check: Optional[float] = None
 
 
 class NodePool:
     """Manage multiple Qortal nodes with primary-first failover."""
 
-    def __init__(self, nodes: List[str], timeout: float, *, cooldown_seconds: float = 30.0) -> None:
+    def __init__(
+        self,
+        nodes: List[str],
+        timeout: float,
+        *,
+        cooldown_seconds: float = 30.0,
+        health_check_path: Optional[str] = None,
+        health_check_timeout: Optional[float] = None,
+    ) -> None:
         self._entries: List[_NodeEntry] = [_NodeEntry(base_url=node) for node in nodes]
         self._timeout = timeout
         self._cooldown_seconds = cooldown_seconds
         self._primary_url = nodes[0] if nodes else None
+        self._health_check_path = health_check_path
+        self._health_check_timeout = health_check_timeout or timeout
 
-    def _should_try(self, entry: _NodeEntry) -> bool:
+    def _in_cooldown(self, entry: _NodeEntry) -> bool:
         if entry.last_failure is None:
+            return False
+        return (time.monotonic() - entry.last_failure) < self._cooldown_seconds
+
+    async def _probe(self, entry: _NodeEntry) -> bool:
+        if not self._health_check_path:
             return True
-        return (time.monotonic() - entry.last_failure) >= self._cooldown_seconds
+        if entry.client is None:
+            entry.client = httpx.AsyncClient(base_url=entry.base_url, timeout=self._timeout)
+        try:
+            response = await entry.client.get(
+                self._health_check_path, timeout=self._health_check_timeout
+            )
+            entry.last_health_check = time.monotonic()
+            if response.status_code < 400:
+                self.report_success(entry.base_url)
+                return True
+            self.report_failure(entry.base_url)
+            return False
+        except httpx.RequestError:
+            self.report_failure(entry.base_url)
+            return False
 
     async def get_candidates(self) -> List[Tuple[httpx.AsyncClient, _NodeEntry]]:
         """Return clients to try in priority order, skipping nodes in cooldown."""
         candidates: List[Tuple[httpx.AsyncClient, _NodeEntry]] = []
         for entry in self._entries:
-            if not self._should_try(entry):
+            if self._in_cooldown(entry):
                 continue
             if entry.client is None:
                 entry.client = httpx.AsyncClient(base_url=entry.base_url, timeout=self._timeout)
+            if entry.last_failure is not None and self._health_check_path:
+                if not await self._probe(entry):
+                    continue
             candidates.append((entry.client, entry))
         if not candidates and self._entries:
             primary = self._entries[0]
@@ -144,7 +177,13 @@ class QortalApiClient:
             seen.add(url)
         if len(ordered) <= 1:
             return None
-        return NodePool(ordered, timeout=self.config.timeout)
+        return NodePool(
+            ordered,
+            timeout=self.config.timeout,
+            cooldown_seconds=self.config.fallback_cooldown_seconds,
+            health_check_path=self.config.fallback_health_check_path,
+            health_check_timeout=self.config.fallback_health_check_timeout,
+        )
 
     async def _get_client(self) -> httpx.AsyncClient:
         if self._client is None:

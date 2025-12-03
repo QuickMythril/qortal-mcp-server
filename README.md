@@ -73,7 +73,7 @@ rules in **`AGENTS.md`**.
 ## Public node fallback (opt-in, experimental)
 
 - Default behavior remains single-node/local. Fallback to public nodes must be explicitly enabled.
-- Enable via env: `QORTAL_ALLOW_PUBLIC_FALLBACK=true` plus a comma-separated `QORTAL_PUBLIC_NODES` list (e.g., `https://api.qortal.org`).
+- Enable via env: `QORTAL_ALLOW_PUBLIC_FALLBACK=true` plus a comma-separated `QORTAL_PUBLIC_NODES` list (e.g., `https://api.qortal.org`). Optional tuning: `QORTAL_FALLBACK_COOLDOWN_SECONDS` (~30 default), `QORTAL_FALLBACK_HEALTH_CHECK_PATH` (default `/blocks/height`), `QORTAL_FALLBACK_HEALTH_CHECK_TIMEOUT` (default ~2s).
 - Policy: primary-first; retry another node only on network errors (connection/timeout). Any real HTTP response (including 401/4xx/5xx) stops retries. Recently failed nodes are skipped for a short cooldown (~30s default).
 - API key: only sent to the trusted local node; never forwarded to public nodes. Admin endpoints may still fail on fallback due to missing auth.
 - Trust note: public nodes change the trust model for read-only data; enable only if you accept that tradeoff. See `DESIGN.md` for details.
