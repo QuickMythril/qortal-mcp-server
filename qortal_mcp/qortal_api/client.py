@@ -88,7 +88,13 @@ class QortalApiClient:
         elif isinstance(error_code, str):
             normalized = error_code.upper()
 
+        message_upper = (message or "").upper()
         lowered_message = (message or "").lower()
+        signals = set()
+        if normalized:
+            signals.add(normalized)
+        if message_upper:
+            signals.add(message_upper)
 
         invalid_address_signals = {
             "INVALID_ADDRESS",
@@ -96,33 +102,51 @@ class QortalApiClient:
             "INVALID_RECIPIENT",
             "102",
         }
-        if normalized in invalid_address_signals or "invalid address" in lowered_message:
+        if signals.intersection(invalid_address_signals) or "invalid address" in lowered_message:
             return InvalidAddressError(
-                "Invalid Qortal address.", code=normalized or None, status_code=status_code
+                "Invalid Qortal address.",
+                code=normalized or message_upper or None,
+                status_code=status_code,
             )
         name_unknown_signals = {"NAME_UNKNOWN", "401"}
-        if normalized in name_unknown_signals:
+        if signals.intersection(name_unknown_signals):
             return NameNotFoundError(
-                "Name not found.", code=normalized or None, status_code=status_code
+                "Name not found.", code=normalized or message_upper or None, status_code=status_code
             )
-        if normalized in {"BLOCK_UNKNOWN"}:
-            return QortalApiError("Block not found.", code=normalized or None, status_code=status_code)
+        block_unknown_signals = {"BLOCK_UNKNOWN"}
+        if signals.intersection(block_unknown_signals) or "block unknown" in lowered_message:
+            return QortalApiError(
+                "Block not found.", code=normalized or message_upper or None, status_code=status_code
+            )
         invalid_asset_signals = {"INVALID_ASSET_ID", "601"}
-        if normalized in invalid_asset_signals:
-            return QortalApiError("Asset not found.", code=normalized or None, status_code=status_code)
+        if signals.intersection(invalid_asset_signals):
+            return QortalApiError(
+                "Asset not found.", code=normalized or message_upper or None, status_code=status_code
+            )
         unknown_signals = {"ADDRESS_UNKNOWN", "UNKNOWN_ADDRESS", "124"}
-        if normalized in unknown_signals or "unknown address" in lowered_message:
+        if signals.intersection(unknown_signals) or "unknown address" in lowered_message:
             return AddressNotFoundError(
-                "Address not found on chain.", code=normalized or None, status_code=status_code
+                "Address not found on chain.",
+                code=normalized or message_upper or None,
+                status_code=status_code,
+            )
+        invalid_data_signals = {"INVALID_DATA"}
+        if signals.intersection(invalid_data_signals) or "invalid data" in lowered_message:
+            return QortalApiError(
+                "Qortal API error.", code=normalized or message_upper or None, status_code=status_code
             )
         if status_code == 404:
-            return QortalApiError("Resource not found.", code=normalized or None, status_code=status_code)
+            return QortalApiError(
+                "Resource not found.", code=normalized or message_upper or None, status_code=status_code
+            )
         if status_code in {401, 403}:
             return UnauthorizedError(
-                "Unauthorized or API key required.", code=normalized or None, status_code=status_code
+                "Unauthorized or API key required.",
+                code=normalized or message_upper or None,
+                status_code=status_code,
             )
         return QortalApiError(
-            "Qortal API error.", code=normalized or None, status_code=status_code
+            "Qortal API error.", code=normalized or message_upper or None, status_code=status_code
         )
 
     async def _request(
@@ -432,7 +456,11 @@ class QortalApiClient:
     async def fetch_block_height_by_signature(self, signature: str) -> Any:
         """Fetch block height from signature."""
         encoded = quote(signature, safe="")
-        return await self._request(f"/blocks/height/{encoded}", expect_dict=False)
+        height_text = await self._request(f"/blocks/height/{encoded}", expect_dict=False, expect_json=False)
+        try:
+            return int(height_text.strip())
+        except (AttributeError, TypeError, ValueError):
+            raise QortalApiError("Unexpected response from node.")
 
     async def fetch_first_block(self) -> Any:
         """Fetch first block."""
@@ -446,9 +474,18 @@ class QortalApiClient:
         """Fetch minting info for block height."""
         return await self._request(f"/blocks/byheight/{height}/mintinginfo")
 
-    async def fetch_block_signers(self) -> Any:
+    async def fetch_block_signers(
+        self, *, limit: Optional[int] = None, offset: Optional[int] = None, reverse: Optional[bool] = None
+    ) -> Any:
         """Fetch list of block signers."""
-        return await self._request("/blocks/signers", expect_dict=False)
+        params: Dict[str, Any] = {}
+        if limit is not None:
+            params["limit"] = limit
+        if offset is not None:
+            params["offset"] = offset
+        if reverse is not None:
+            params["reverse"] = reverse
+        return await self._request("/blocks/signers", params=params or None, expect_dict=False)
 
     async def fetch_transaction_by_signature(self, signature: str) -> Any:
         """Fetch transaction by signature."""

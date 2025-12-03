@@ -13,8 +13,6 @@ from qortal_mcp.tools.blocks_extra import (
     get_block_height_by_signature,
     get_first_block,
     get_last_block,
-    get_minting_info_by_height,
-    list_block_signers,
 )
 from qortal_mcp.tools.transactions import search_transactions
 from qortal_mcp.tools.transactions_extra import (
@@ -124,31 +122,6 @@ async def test_first_last_block_errors():
             raise NodeUnreachableError("down")
 
     assert await get_first_block(client=StubClient()) == {"error": "Node unreachable"}
-
-
-@pytest.mark.asyncio
-async def test_minting_info_invalid_height():
-    assert await get_minting_info_by_height("bad") == {"error": "Invalid height."}
-
-
-@pytest.mark.asyncio
-async def test_block_signers_unexpected_response():
-    class StubClient:
-        async def fetch_block_signers(self):
-            return {"not": "list"}
-
-    assert await list_block_signers(client=StubClient()) == {"error": "Unexpected response from node."}
-
-
-@pytest.mark.asyncio
-async def test_block_signers_with_limit_offset():
-    class StubClient:
-        async def fetch_block_signers(self):
-            return [{"signer": "Q1"}, {"signer": "Q2"}]
-
-    result = await list_block_signers(limit=1, offset=0, reverse=False, client=StubClient())
-    assert isinstance(result, list)
-    assert len(result) == 2
 
 
 @pytest.mark.asyncio

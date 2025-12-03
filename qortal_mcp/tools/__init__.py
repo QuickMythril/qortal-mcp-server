@@ -32,8 +32,6 @@ from .blocks_extra import (
     get_block_height_by_signature,
     get_first_block,
     get_last_block,
-    get_minting_info_by_height,
-    list_block_signers,
 )
 from .transactions import search_transactions
 from .transactions_extra import (
@@ -78,8 +76,6 @@ __all__ = [
     "get_block_height_by_signature",
     "get_first_block",
     "get_last_block",
-    "get_minting_info_by_height",
-    "list_block_signers",
     "search_transactions",
     "get_transaction_by_signature",
     "get_transaction_by_reference",

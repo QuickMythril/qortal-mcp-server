@@ -42,8 +42,6 @@
     "get_block_height_by_signature",
     "get_first_block",
     "get_last_block",
-    "get_minting_info_by_height",
-    "list_block_signers",
     "get_transaction_by_signature",
     "get_transaction_by_reference",
     "list_transactions_by_block",
