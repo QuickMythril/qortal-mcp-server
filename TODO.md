@@ -20,11 +20,11 @@ This list merges the gaps I found and the other CLI agent’s findings. Use it a
 - Update MCP manifest/registry and config limits for block summary/range paging; add tests for validation. ✅ implemented
 
 ## Block/transaction fixes (in progress)
-- `get_block_at_timestamp`: mapped BLOCK_UNKNOWN/404/400 “block not found” responses to “No block at or before timestamp.” (retest genesis-edge).
+- `get_block_at_timestamp`: mapped BLOCK_UNKNOWN/404/400 “block not found” responses to “No block at or before timestamp.” (genesis-edge confirmed via live test).
 - `list_block_signers`: removed from MCP surface for now; if re-enabled later, include limit/offset/reverse with safe defaults and verify `/blocks/signers` wiring.
 - `get_minting_info_by_height`: removed from MCP surface for now; only re-add if we need minting info, with clear error mapping for missing/invalid heights.
-- `list_transactions_by_creator`: validation fixed (confirmationStatus required; invalid public key mapped). ✅ implemented; live retest optional.
-- `list_transactions_by_block`: added limit/offset/reverse params with clamping and improved block-not-found mapping. ✅ implemented; live retest optional.
+- `list_transactions_by_creator`: validation fixed (confirmationStatus required; invalid public key mapped). ✅ implemented and live-tested.
+- `list_transactions_by_block`: added limit/offset/reverse params with clamping and improved block-not-found mapping. ✅ implemented and live-tested.
 
 ## Trade validation (pending)
 - Validate `get_trade_detail` against live offers now that AT addresses are surfaced; add AT-format validation if needed. Optional but useful for end-to-end sanity.
