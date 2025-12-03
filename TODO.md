@@ -14,21 +14,6 @@ This list merges the gaps I found and the other CLI agent’s findings. Use it a
 - When adding new endpoints or parameters, update `DESIGN.md` to document the expanded whitelist, validation, and limits.
 - Add/adjust tests for new parameter handling and validation (especially for the new arbitrary/search and crosschain filters, and offset clamping).
 
-## New work items (blocks/transactions)
-- Add block/time mapping tools: `/blocks/timestamp/{timestamp}`, `/blocks/height`, `/blocks/byheight/{height}`, `/blocks/summaries`, `/blocks/range/{height}` with chunked limits. ✅ implemented
-- Add transaction search tool wrapping `/transactions/search` with Core constraints (txType or address or limit<=20; block ranges only with CONFIRMED); clamp limits. ✅ implemented
-- Update MCP manifest/registry and config limits for block summary/range paging; add tests for validation. ✅ implemented
-
-## Block/transaction fixes (in progress)
-- `get_block_at_timestamp`: mapped BLOCK_UNKNOWN/404/400 “block not found” responses to “No block at or before timestamp.” (genesis-edge confirmed via live test).
-- `list_block_signers`: removed from MCP surface for now; if re-enabled later, include limit/offset/reverse with safe defaults and verify `/blocks/signers` wiring.
-- `get_minting_info_by_height`: removed from MCP surface for now; only re-add if we need minting info, with clear error mapping for missing/invalid heights.
-- `list_transactions_by_creator`: validation fixed (confirmationStatus required; invalid public key mapped). ✅ implemented and live-tested.
-- `list_transactions_by_block`: added limit/offset/reverse params with clamping and improved block-not-found mapping. ✅ implemented and live-tested.
-
-## Trade validation (pending)
-- Validate `get_trade_detail` against live offers now that AT addresses are surfaced; add AT-format validation if needed. Optional but useful for end-to-end sanity.
-
 ## Optional/Deferred endpoints
 - Address utilities (read-only): `/addresses/lastreference/{address}`, `/addresses/online`, `/addresses/online/levels`, `/addresses/publickey/{address}`, `/addresses/convert/{publickey}`.
 - Admin read-only (optional): `/admin/settings`, `/admin/settings/{setting}`, `/admin/summary/alltime`, `/admin/enginestats`, `/admin/mintingaccounts`.
