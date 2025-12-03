@@ -15,6 +15,19 @@ from typing import Optional
 
 # Default connection settings
 DEFAULT_BASE_URL = os.getenv("QORTAL_BASE_URL", "http://localhost:12391")
+ALLOW_PUBLIC_FALLBACK = os.getenv("QORTAL_ALLOW_PUBLIC_FALLBACK", "false").lower() == "true"
+
+
+def _parse_public_nodes(raw: str) -> list[str]:
+    nodes: list[str] = []
+    for entry in raw.split(","):
+        trimmed = entry.strip()
+        if trimmed:
+            nodes.append(trimmed)
+    return nodes
+
+
+DEFAULT_PUBLIC_NODES = _parse_public_nodes(os.getenv("QORTAL_PUBLIC_NODES", ""))
 
 
 def _load_timeout() -> float:
@@ -125,6 +138,8 @@ class QortalConfig:
     log_level: str = LOG_LEVEL
     log_format: str = LOG_FORMAT
     per_tool_rate_limits: dict[str, float] = field(default_factory=dict)
+    public_nodes: list[str] = field(default_factory=lambda: list(DEFAULT_PUBLIC_NODES))
+    allow_public_fallback: bool = ALLOW_PUBLIC_FALLBACK
 
 
 default_config = QortalConfig()

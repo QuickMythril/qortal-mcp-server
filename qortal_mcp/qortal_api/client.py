@@ -8,7 +8,9 @@ tool layer can turn into safe, user-facing messages.
 from __future__ import annotations
 
 import logging
-from typing import Any, Dict, List, Optional
+import time
+from dataclasses import dataclass
+from typing import Any, Dict, List, Optional, Tuple
 from urllib.parse import quote
 
 import httpx
@@ -57,6 +59,65 @@ class NodeUnreachableError(QortalApiError):
     """Raised when the node cannot be reached."""
 
 
+@dataclass(slots=True)
+class _NodeEntry:
+    base_url: str
+    client: Optional[httpx.AsyncClient] = None
+    last_failure: Optional[float] = None
+
+
+class NodePool:
+    """Manage multiple Qortal nodes with primary-first failover."""
+
+    def __init__(self, nodes: List[str], timeout: float, *, cooldown_seconds: float = 30.0) -> None:
+        self._entries: List[_NodeEntry] = [_NodeEntry(base_url=node) for node in nodes]
+        self._timeout = timeout
+        self._cooldown_seconds = cooldown_seconds
+        self._primary_url = nodes[0] if nodes else None
+
+    def _should_try(self, entry: _NodeEntry) -> bool:
+        if entry.last_failure is None:
+            return True
+        return (time.monotonic() - entry.last_failure) >= self._cooldown_seconds
+
+    async def get_candidates(self) -> List[Tuple[httpx.AsyncClient, _NodeEntry]]:
+        """Return clients to try in priority order, skipping nodes in cooldown."""
+        candidates: List[Tuple[httpx.AsyncClient, _NodeEntry]] = []
+        for entry in self._entries:
+            if not self._should_try(entry):
+                continue
+            if entry.client is None:
+                entry.client = httpx.AsyncClient(base_url=entry.base_url, timeout=self._timeout)
+            candidates.append((entry.client, entry))
+        if not candidates and self._entries:
+            primary = self._entries[0]
+            if primary.client is None:
+                primary.client = httpx.AsyncClient(base_url=primary.base_url, timeout=self._timeout)
+            candidates.append((primary.client, primary))
+        return candidates
+
+    def report_failure(self, base_url: str) -> None:
+        for entry in self._entries:
+            if entry.base_url == base_url:
+                entry.last_failure = time.monotonic()
+                break
+
+    def report_success(self, base_url: str) -> None:
+        for entry in self._entries:
+            if entry.base_url == base_url:
+                entry.last_failure = None
+                break
+
+    def is_trusted(self, base_url: str) -> bool:
+        return base_url == self._primary_url
+
+    async def aclose(self) -> None:
+        for entry in self._entries:
+            if entry.client is not None:
+                await entry.client.aclose()
+                entry.client = None
+
+
 class QortalApiClient:
     """Async client for the limited Qortal Core API surface."""
 
@@ -69,6 +130,21 @@ class QortalApiClient:
         self.config = config or default_config
         self._client: Optional[httpx.AsyncClient] = async_client
         self._owns_client = async_client is None
+        self._node_pool = self._build_node_pool()
+
+    def _build_node_pool(self) -> Optional[NodePool]:
+        if not self.config.allow_public_fallback:
+            return None
+        ordered: List[str] = []
+        seen: set[str] = set()
+        for url in [self.config.base_url, *self.config.public_nodes]:
+            if not url or url in seen:
+                continue
+            ordered.append(url)
+            seen.add(url)
+        if len(ordered) <= 1:
+            return None
+        return NodePool(ordered, timeout=self.config.timeout)
 
     async def _get_client(self) -> httpx.AsyncClient:
         if self._client is None:
@@ -79,6 +155,8 @@ class QortalApiClient:
         return self._client
 
     async def aclose(self) -> None:
+        if self._node_pool is not None:
+            await self._node_pool.aclose()
         if self._client is not None and self._owns_client:
             await self._client.aclose()
             self._client = None
@@ -172,17 +250,31 @@ class QortalApiClient:
         expect_dict: bool = True,
         expect_json: bool = True,
     ) -> Any:
-        client = await self._get_client()
+        if self._node_pool is None:
+            return await self._request_single(
+                path,
+                params=params,
+                use_api_key=use_api_key,
+                expect_dict=expect_dict,
+                expect_json=expect_json,
+            )
+        return await self._request_with_pool(
+            path,
+            params=params,
+            use_api_key=use_api_key,
+            expect_dict=expect_dict,
+            expect_json=expect_json,
+        )
+
+    def _build_headers(self, *, use_api_key: bool, trusted: bool) -> Dict[str, str]:
         headers: Dict[str, str] = {}
-        if use_api_key and self.config.api_key:
+        if use_api_key and trusted and self.config.api_key:
             headers["X-API-KEY"] = self.config.api_key
+        return headers
 
-        try:
-            response = await client.get(path, params=params, headers=headers)
-        except httpx.RequestError as exc:
-            logger.warning("Qortal node unreachable for path %s", path)
-            raise NodeUnreachableError("Node unreachable") from exc
-
+    def _process_response(
+        self, response: httpx.Response, *, expect_dict: bool, expect_json: bool
+    ) -> Any:
         if response.status_code == 401:
             raise UnauthorizedError("Unauthorized or API key required.", status_code=401)
 
@@ -215,6 +307,59 @@ class QortalApiClient:
             raise QortalApiError("Unexpected response from node.", status_code=response.status_code)
 
         return data
+
+    async def _request_single(
+        self,
+        path: str,
+        *,
+        params: Optional[Dict[str, Any]],
+        use_api_key: bool,
+        expect_dict: bool,
+        expect_json: bool,
+    ) -> Any:
+        client = await self._get_client()
+        headers = self._build_headers(use_api_key=use_api_key, trusted=True)
+        try:
+            response = await client.get(path, params=params, headers=headers)
+        except httpx.RequestError as exc:
+            logger.warning("Qortal node unreachable for path %s", path)
+            raise NodeUnreachableError("Node unreachable") from exc
+        return self._process_response(response, expect_dict=expect_dict, expect_json=expect_json)
+
+    async def _request_with_pool(
+        self,
+        path: str,
+        *,
+        params: Optional[Dict[str, Any]],
+        use_api_key: bool,
+        expect_dict: bool,
+        expect_json: bool,
+    ) -> Any:
+        last_exc: Optional[Exception] = None
+        assert self._node_pool is not None
+        candidates = await self._node_pool.get_candidates()
+        for client, entry in candidates:
+            headers = self._build_headers(
+                use_api_key=use_api_key, trusted=self._node_pool.is_trusted(entry.base_url)
+            )
+            try:
+                response = await client.get(path, params=params, headers=headers)
+            except httpx.RequestError as exc:
+                logger.warning("Qortal node unreachable for path %s via %s", path, entry.base_url)
+                self._node_pool.report_failure(entry.base_url)
+                last_exc = exc
+                continue
+            try:
+                result = self._process_response(
+                    response, expect_dict=expect_dict, expect_json=expect_json
+                )
+            except QortalApiError:
+                self._node_pool.report_success(entry.base_url)
+                raise
+            self._node_pool.report_success(entry.base_url)
+            return result
+
+        raise NodeUnreachableError("Node unreachable") from last_exc
 
     async def fetch_node_status(self) -> Dict[str, Any]:
         """Retrieve node synchronization and connectivity state."""
@@ -619,7 +764,7 @@ class QortalApiClient:
         if addresses:
             params["address"] = addresses
         if asset_ids:
-            params["assetid"] = asset_ids
+            params["assetId"] = asset_ids
         if ordering:
             params["ordering"] = ordering
         if exclude_zero is not None:
